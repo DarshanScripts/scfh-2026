@@ -1,0 +1,30 @@
+{
+  "name": "scfh-desktop-voice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check:desktop": "node --env-file-if-exists=.env check-desktop.mjs",
+    "test:desktop:windows": "node --env-file-if-exists=.env test/desktop-windows.mjs",
+    "test:orb": "node --test test/floating-window.test.mjs",
+    "test:voice": "node --env-file-if-exists=.env test/voice-room.mjs",
+    "connect": "node --env-file-if-exists=.env agent.mjs connect",
+    "dev": "node --env-file-if-exists=.env agent.mjs dev",
+    "start": "start.cmd"
+  },
+  "dependencies": {
+    "@livekit/agents": "1.10.1",
+    "@livekit/agents-plugin-bey": "1.10.1",
+    "@livekit/agents-plugin-openai": "1.10.1",
+    "@modelcontextprotocol/client": "2.3.1",
+    "electron": "45.4.1",
+    "livekit-client": "2.25.0",
+    "livekit-server-sdk": "2.20.1"
+  },
+  "devDependencies": {
+    "playwright-core": "1.65.1"
+  }
+}
