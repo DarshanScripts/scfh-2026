@@ -19,7 +19,7 @@ function circleRegion(diameter) {
 
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
-  const diameter = 88;
+  const diameter = 160;
   const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
   const window = voiceWindow = new BrowserWindow({
     x: area.x + Math.max(0, area.width - diameter - 24),
@@ -59,7 +59,20 @@ app.whenReady().then(async () => {
   };
   contents.on('will-navigate', preventExternalNavigation);
   contents.on('will-redirect', preventExternalNavigation);
-  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  const answersPage = new URL('/answers', origin).href;
+  contents.setWindowOpenHandler(({ url, frameName }) => url === answersPage && frameName === 'facilities-onboarding'
+    ? { action: 'allow', overrideBrowserWindowOptions: {
+      title: 'Facilities Onboarding', width: 820, height: 740, parent: window,
+      x: Math.max(area.x, window.getBounds().x - 830), y: area.y + 24,
+      webPreferences: { nodeIntegration: false, sandbox: true, contextIsolation: true },
+    } }
+    : { action: 'deny' });
+  contents.on('did-create-window', (panel) => {
+    const blockNavigation = (event, url) => { if (url !== answersPage) event.preventDefault(); };
+    panel.webContents.on('will-navigate', blockNavigation);
+    panel.webContents.on('will-redirect', blockNavigation);
+    panel.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  });
 
   await window.loadURL(page);
   window.showInactive();

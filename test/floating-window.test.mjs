@@ -63,7 +63,7 @@ test('the desktop orb stays on top and its single button cancels a pending call'
       assert.deepEqual(await app.evaluate(({ BrowserWindow }) => {
         const orb = BrowserWindow.getAllWindows()[0];
         return [orb.isAlwaysOnTop(), ...orb.getContentSize()];
-      }), [true, 88, 88]);
+      }), [true, 160, 160]);
       await call.click();
       await Promise.race([connect, new Promise((_, reject) => {
         timer = setTimeout(() => reject(new Error('Microphone capture did not reach the call endpoint.')), 5_000);

@@ -7,6 +7,7 @@ import { createDesktopTools } from './desktop.mjs';
 import { createDesktopActionGuard, desktopInstructions } from './desktop-harness.mjs';
 import { createWorkflowTools } from './workflow-tools.mjs';
 import { listenForAvatarAudio } from './workflow-playback.mjs';
+import { createOnboardingAnswers } from './onboarding-answer.mjs';
 
 const workerName = process.env.LIVEKIT_AGENT_NAME?.trim() || 'handbook-windows';
 const language = process.env.AGENT_LANGUAGE || 'en';
@@ -28,6 +29,7 @@ export default defineAgent({
     const { model } = settings;
     const client = await createAnthropicClient(settings);
     const desktopGuard = createDesktopActionGuard();
+    const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
     let avatarAudio;
     const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal });
     ctx.addShutdownCallback(() => workflows.close());
@@ -36,14 +38,18 @@ export default defineAgent({
       stt: new inference.STT({ model: 'deepgram/nova-3', language }),
       llm: new LLM({ client, model, parallelToolCalls: false }),
       tts: new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
-      tools: [createDesktopTools({ client, model, guard: desktopGuard }), ...workflows.tools],
+      tools: [createDesktopTools({ client, model, guard: desktopGuard }), onboarding.tool, ...workflows.tools],
     });
+    async function beginUserTurn() {
+      workflows.interrupt();
+      desktopGuard.beginTurn();
+      await onboarding.beginTurn();
+    }
     const agent = voice.Agent.create({
-      instructions: desktopInstructions(language),
-      onUserTurnCompleted() {
-        workflows.interrupt();
-        desktopGuard.beginTurn();
-      },
+      instructions: desktopInstructions(language, {
+        onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
+      }),
+      onUserTurnCompleted: beginUserTurn,
       async *llmNode(ctx, chatCtx, toolCtx, settings) {
         const stream = await voice.Agent.default.llmNode(ctx.agent, chatCtx, toolCtx, settings);
         if (!stream) return;
@@ -76,7 +82,7 @@ export default defineAgent({
     if (avatarEnabled) {
       const avatar = new AvatarSession({
         apiKey: required('BEYOND_PRESENCE_API_KEY', 'BEY_API_KEY'),
-        ...(process.env.BEY_AVATAR_ID && { avatarId: process.env.BEY_AVATAR_ID }),
+        avatarId: process.env.BEY_AVATAR_ID || process.env.BEYOND_PRESENCE_AVATAR_ID,
       });
       ctx.addShutdownCallback(() => avatar.aclose());
       avatarAudio = listenForAvatarAudio(ctx.room, avatar.avatarIdentity);
@@ -86,6 +92,13 @@ export default defineAgent({
     await session.start({
       agent,
       room: ctx.room,
+      inputOptions: {
+        async textInputCallback(activeSession, event) {
+          activeSession.interrupt();
+          await beginUserTurn();
+          activeSession.generateReply({ userInput: event.text });
+        },
+      },
       ...(avatarEnabled && { outputOptions: { audioEnabled: false } }),
     });
   },

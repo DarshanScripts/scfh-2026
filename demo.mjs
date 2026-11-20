@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { AccessToken, RoomAgentDispatch, RoomConfiguration, RoomServiceClient } from 'livekit-server-sdk';
 import { anthropicSettings } from './anthropic.mjs';
+import { answerPanelPolicy, proxyOnboarding, startOnboardingService } from './onboarding-service.mjs';
 
 const host = '127.0.0.1';
 const menuPort = Number(process.env.DEMO_PORT || 4321);
@@ -16,7 +17,7 @@ const windowEnv = Object.fromEntries(Object.entries(process.env).filter(([name])
   /^(path|pathext|windir|systemroot|systemdrive|userprofile|localappdata|appdata|programdata|temp|tmp)$/i.test(name)));
 const avatarEnabled = process.env.ENABLE_AVATAR === '1';
 const { LIVEKIT_URL: livekitURL, LIVEKIT_API_KEY: key, LIVEKIT_API_SECRET: secret } = process.env;
-const agentName = 'scfh-desktop-demo';
+const agentName = `scfh-desktop-demo-${randomUUID()}`;
 
 anthropicSettings();
 
@@ -34,14 +35,19 @@ try {
   throw new Error('Could not authenticate the LiveKit Cloud project' + status + '. Check the LiveKit settings in .env.');
 }
 
+const onboarding = await startOnboardingService().catch((error) => {
+  console.warn('Onboarding unavailable. See the onboarding setup in README.md.', error.message);
+});
 const workerEnv = {
   ...process.env,
   LIVEKIT_AGENT_NAME: agentName,
+  ONBOARDING_SERVICE_URL: onboarding?.url || '',
 };
-const [html, script, sdk] = await Promise.all([
+const [html, script, sdk, answers] = await Promise.all([
   readFile(new URL('./demo/index.html', import.meta.url)),
   readFile(new URL('./demo/orb.js', import.meta.url)),
   readFile(new URL('./node_modules/livekit-client/dist/livekit-client.umd.js', import.meta.url)),
+  readFile(new URL('./demo/answers.html', import.meta.url)),
 ]);
 
 const menu = createServer(async (request, response) => {
@@ -54,7 +60,12 @@ const menu = createServer(async (request, response) => {
     if (request.url === '/') return response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(html);
     if (request.url === '/orb.js') return response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(script);
     if (request.url === '/livekit.js') return response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(sdk);
+    if (request.url === '/answers') {
+      response.setHeader('Content-Security-Policy', answerPanelPolicy);
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(answers);
+    }
   }
+  if (await proxyOnboarding(request, response, onboarding?.url, origin)) return;
   if (request.method === 'POST' && request.url === '/connect' && request.headers.origin === origin) {
     try {
       const name = 'desktop-demo-' + randomUUID();
@@ -78,6 +89,7 @@ function stop(code = 0) {
   stopping = true;
   process.exitCode = code;
   menu.close();
+  onboarding?.close();
   for (const child of children) if (child.exitCode === null) child.kill();
 }
 

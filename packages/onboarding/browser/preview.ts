@@ -1,7 +1,6 @@
 import type { Citation } from "./contracts";
 
 const NO_HIGHLIGHT = "Opened the source location. The exact passage couldn’t be highlighted.";
-const pdfModuleUrl: string = "/pdfjs/pdf.mjs";
 
 type Source = Extract<Citation, { status: "exact" | "location_only" }>;
 type Point = { node: Text; offset: number; width: number };
@@ -95,7 +94,7 @@ function openWord(source: Source, container: HTMLElement): boolean {
 async function openPdf(source: Source, container: HTMLElement): Promise<boolean> {
   const locator = source.passage.locator;
   if (locator.format !== "pdf") return false;
-  const pdfjs: typeof import("pdfjs-dist") = await import(pdfModuleUrl);
+  const pdfjs: typeof import("pdfjs-dist") = await import(new URL("/pdfjs/pdf.mjs", location.origin).href);
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.mjs";
   const task = pdfjs.getDocument({ url: source.sourceUrl, isEvalSupported: false });
   try {

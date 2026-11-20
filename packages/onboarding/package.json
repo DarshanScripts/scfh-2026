@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build browser/harness.ts --target browser --outdir dist --minify --conditions production --external /pdfjs/pdf.mjs",
-    "check": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler browser/harness.ts"
+    "build": "bun build browser/harness.ts browser/answers.ts --target browser --outdir dist --minify --conditions production --external /pdfjs/pdf.mjs",
+    "check": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler browser/harness.ts browser/answers.ts"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "0.18.1",

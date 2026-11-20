@@ -4,6 +4,31 @@ const status = document.querySelector('#status');
 const toggle = document.querySelector('#voice-toggle');
 const avatar = document.querySelector('#avatar');
 let activeCall;
+let answerWindow;
+let currentAnswer;
+const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
+
+window.addEventListener('message', ({ origin, source, data }) => {
+  if (origin === location.origin && source === answerWindow && data?.type === 'onboarding-panel-ready' && currentAnswer) {
+    answerWindow.postMessage(currentAnswer, location.origin);
+  }
+});
+
+function receiveOnboarding(attempt, message, participant) {
+  if (attempt !== activeCall || !attempt.agentIdentity ||
+      participant?.identity !== attempt.agentIdentity || message.length > 14000) return;
+  let event;
+  try { event = JSON.parse(message); } catch { return; }
+  if (event?.schemaVersion !== 1 || typeof event.turnId !== 'string' || !uuid.test(event.turnId)) return;
+  if (event.type === 'turn') { attempt.turn = event.turnId; attempt.request = undefined; return; }
+  if (event.turnId !== attempt.turn || attempt.request || typeof event.requestId !== 'string' || !uuid.test(event.requestId)) return;
+  if (event.type !== 'answer' && event.type !== 'error') return;
+  if (event.type === 'answer' && (event.answer?.requestId !== event.requestId || event.answer?.turnId !== event.turnId)) return;
+  attempt.request = event.requestId;
+  currentAnswer = event;
+  if (!answerWindow || answerWindow.closed) answerWindow = window.open('/answers', 'facilities-onboarding');
+  else answerWindow.postMessage(event, location.origin);
+}
 
 function switchMedia(attempt, audio, video) {
   if (attempt.audio !== audio) {
@@ -47,6 +72,9 @@ function finish(attempt, message, state = 'idle') {
   attempt.abort.abort();
   attempt.microphone?.stop();
   switchMedia(attempt);
+  answerWindow?.close();
+  answerWindow = undefined;
+  currentAnswer = undefined;
   void attempt.room.disconnect().catch(() => {});
   setStatus(state, message);
 }
@@ -67,6 +95,7 @@ toggle.onclick = async () => {
     const participants = [...session.remoteParticipants.values()];
     const agent = participants.find((participant) =>
       participant.kind === ParticipantKind.AGENT && !participant.attributes['lk.publish_on_behalf']);
+    attempt.agentIdentity = agent?.identity;
     const presenter = attempt.avatarEnabled && agent
       ? participants.find((participant) => participant.kind === ParticipantKind.AGENT &&
         participant.attributes['lk.publish_on_behalf'] === agent.identity)
@@ -97,6 +126,12 @@ toggle.onclick = async () => {
   session.on(RoomEvent.ParticipantConnected, updateStatus);
   session.on(RoomEvent.ParticipantDisconnected, updateStatus);
   session.on(RoomEvent.TrackSubscribed, updateStatus);
+  let onboardingReads = Promise.resolve();
+  session.registerTextStreamHandler?.('scfh.onboarding.v1', (reader, participant) => {
+    if (participant.identity !== attempt.agentIdentity) return;
+    const message = reader.readAll().catch(() => '');
+    onboardingReads = onboardingReads.then(async () => receiveOnboarding(attempt, await message, participant));
+  });
   // LiveKit emits this before clearing the publication's old track.
   session.on(RoomEvent.TrackUnsubscribed, () => queueMicrotask(updateStatus));
   session.on(RoomEvent.Disconnected, () => finish(attempt, 'Disconnected.'));

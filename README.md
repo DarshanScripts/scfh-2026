@@ -19,6 +19,22 @@ Run `npm run test:orb` to check the floating window and call cancellation with a
 
 See [Windows acceptance](docs/windows-acceptance.md) for the baseline audit and the cursor and avatar review steps.
 
+### Try cited onboarding answers
+
+Prepare the sample Facilities Service Desk documents once from the repo root, then run `restart.cmd` as usual. This builds the companion panel and prepares the Python service that starts with the orb.
+
+```powershell
+Push-Location packages/onboarding
+uv sync --locked
+npx.cmd --yes bun@1.4.5 install --frozen-lockfile
+npx.cmd --yes bun@1.4.5 run build
+Pop-Location
+```
+
+Start a call and ask “Where’s the guide for logging a maintenance request, and what do I need before I open a ticket?” The Facilities Onboarding window displays the spoken answer. Click **Intake checklist** to open the highlighted PDF passage on page 2. Ask “A maintenance ticket still has no owner. When should I follow up, and who do I tell?” for the Word citation. Ask “What budget do we have for repairs?” to check the reply for missing evidence. The integration uses reviewed demo fixtures. The standalone package documents the separate Qdrant mode.
+
+Run `node --test test/onboarding-answer.test.mjs` to verify the answer and citation panel locally with the fixture service and simulated voice events.
+
 ### Setup
 
 1. Install Node.js 22 or newer and run `npm ci` in this repository.

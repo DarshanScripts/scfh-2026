@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from .contracts import Answer, CitationRequest, CitationUnavailable, Query, StrictModel, Walkthrough
+from .contracts import Answer, CitationRequest, CitationUnavailable, Query, Request, StrictModel, Walkthrough
 from .knowledge import FixtureKnowledge
 from .rag import QdrantKnowledge, RagError
 
@@ -38,6 +38,7 @@ class Harness:
         self.assets = {
             **STYLES,
             "/harness.js": bundle,
+            "/answers.js": bundle.with_name("answers.js"),
             **{url: pdfjs / name for url, name in PDFJS_FILES.items()},
             **{
                 "/excalidraw-assets/" + font.relative_to(excalidraw_fonts.parent).as_posix(): font
@@ -81,6 +82,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         url = urlsplit(self.path)
+        if url.path == "/health":
+            self.send_payload(200, b"{}", "application/json")
+            return
+        if url.path == "/schema/answer":
+            import json
+            self.send_payload(200, json.dumps(Answer.model_json_schema()).encode("utf-8"), "application/json")
+            return
         path = self.harness.assets.get(url.path)
         if url.path.startswith("/sources/"):
             try:
@@ -134,11 +142,17 @@ class Handler(BaseHTTPRequestHandler):
             if self.path not in {"/api/question", "/api/walkthrough"}:
                 self.send_error(404)
                 return
-            query = Question.model_validate_json(payload).query
+            try:
+                request = Request.model_validate_json(payload)
+                query = request.query
+                ids = {"request_id": request.requestId, "turn_id": request.turnId}
+            except ValidationError:
+                query = Question.model_validate_json(payload).query
+                ids = {}
             knowledge = self.harness.knowledge
             result = (
-                knowledge.answer_onboarding_question(query) if self.path == "/api/question"
-                else knowledge.get_onboarding_walkthrough(query)
+                knowledge.answer_onboarding_question(query, **ids) if self.path == "/api/question"
+                else knowledge.get_onboarding_walkthrough(query, **ids)
             )
             if isinstance(result, (Answer, Walkthrough)):
                 self.harness.remember(result)
