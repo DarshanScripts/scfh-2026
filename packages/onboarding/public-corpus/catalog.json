@@ -1,0 +1,51 @@
+{
+  "corpusId": "denton-facilities-public-records",
+  "authority": "City of Denton, Texas",
+  "scope": "Published facilities work-order instructions and the 2020 audit with 2022 and 2023 follow-up reviews. Dates describe the archived sources and do not establish present-day operating policy.",
+  "documents": [
+    {
+      "documentId": "denton-work-order-502-01",
+      "title": "Facilities Management Work Order — Administrative Procedure 502.01",
+      "url": "https://www.cityofdenton.com/DocumentCenter/View/1344/50201-Facilities-Management-Work-Order-PDF",
+      "relativePath": "denton-work-order-502-01.pdf",
+      "expectedPages": 6,
+      "publishedPeriod": "Revision 2005-08-24, document footer 2009-11-02",
+      "role": "Historical procedure with numbered instructions and screenshots",
+      "relatedDocumentIds": [],
+      "demoQuestions": ["According to procedure 502.01, what information do I enter in a new work request?", "How does the published procedure say to check a submitted request's status?"]
+    },
+    {
+      "documentId": "denton-facilities-audit-2020",
+      "title": "Audit of Facilities Maintenance — June 2020",
+      "url": "https://lfpubweb.cityofdenton.com/publicweblink/4/edoc/39597/1.%20Audit%20of%20Facilities%20Maintenance.pdf",
+      "relativePath": "denton-facilities-audit-2020.pdf",
+      "expectedPages": 17,
+      "publishedPeriod": "2020-06",
+      "role": "Original audit with methodology, charts, findings and management responses",
+      "relatedDocumentIds": [],
+      "demoQuestions": ["What did the 2020 audit identify as weaknesses in facilities access management?", "How did the 2020 report describe the work-order assignment process?"]
+    },
+    {
+      "documentId": "denton-facilities-followup-2022",
+      "title": "Audit of Facilities Maintenance — Follow-Up Review, February 2022",
+      "url": "https://www.cityofdenton.com/DocumentCenter/View/4975/February-2022-Follow-Up-Review-of-the-Facilities-Maintenance-Audit-PDF",
+      "relativePath": "denton-facilities-followup-2022.pdf",
+      "expectedPages": 12,
+      "publishedPeriod": "2022-02",
+      "role": "First dated progress update to the original audit",
+      "relatedDocumentIds": ["denton-facilities-audit-2020"],
+      "demoQuestions": ["Which facilities recommendations were still in progress in February 2022?"]
+    },
+    {
+      "documentId": "denton-facilities-followup-2023",
+      "title": "Audit of Facilities Maintenance — Second Follow-Up Review, September 2023",
+      "url": "https://www.cityofdenton.com/DocumentCenter/View/8203/September-2023-Second-Follow-Up-Review-of-the-Facilities-Maintenance-Audit-PDF",
+      "relativePath": "denton-facilities-followup-2023.pdf",
+      "expectedPages": 11,
+      "publishedPeriod": "2023-09",
+      "role": "Second dated progress update, including implemented and outstanding recommendations",
+      "relatedDocumentIds": ["denton-facilities-audit-2020", "denton-facilities-followup-2022"],
+      "demoQuestions": ["What changed between the 2022 and 2023 follow-up reviews?", "As of September 2023, which work-order monitoring recommendations remained in progress?"]
+    }
+  ]
+}

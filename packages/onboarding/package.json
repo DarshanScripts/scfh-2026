@@ -1,0 +1,22 @@
+{
+  "name": "hilhack-onboarding-browser",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build browser/harness.ts --target browser --outdir dist --minify --conditions production --external /pdfjs/pdf.mjs",
+    "check": "tsc --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler browser/harness.ts"
+  },
+  "dependencies": {
+    "@excalidraw/excalidraw": "0.18.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "pdfjs-dist": "5.6.205",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "json-schema-to-ts": "3.1.1",
+    "typescript": "7.0.2",
+    "playwright": "1.62.1"
+  }
+}

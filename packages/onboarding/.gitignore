@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+node_modules/
+dist/
+public-corpus/downloaded/
+public-corpus/qdrant-state.json
+public-corpus/qdrant-state.json.*.tmp

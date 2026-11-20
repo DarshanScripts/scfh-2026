@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Facilities Service Desk onboarding</title>
+  <link rel="stylesheet" href="/pdfjs/pdf_viewer.css">
+  <link rel="stylesheet" href="/style.css">
+  <script>window.EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";</script>
+  <script type="module" src="/harness.js"></script>
+</head>
+<body>
+  <header><h1>Facilities Service Desk</h1><p>Onboarding demo with sample documents</p></header>
+  <main>
+    <section class="panel" aria-label="Knowledge assistant">
+      <form id="question-form">
+        <label for="query">Ask an onboarding question</label>
+        <div class="controls">
+          <input id="query" type="text" required maxlength="600" placeholder="Where is the maintenance intake guide?">
+          <button id="ask-button" type="submit" class="primary">Ask</button>
+          <button id="walkthrough-button" type="submit">Walk through</button>
+        </div>
+      </form>
+      <div class="controls examples">
+        <button type="button" data-query="Where’s the guide for logging a maintenance request, and what do I need before I open a ticket?">Intake checklist</button>
+        <button type="button" data-query="A maintenance ticket still has no owner. When should I follow up, and who do I tell?">Unassigned ticket</button>
+        <button type="button" data-query="I’m taking over the queue. Which open item is due first, and who owns it?">Next deadline</button>
+      </div>
+      <p id="answer" role="status"></p>
+      <div id="citations" aria-label="Citations"></div>
+    </section>
+    <section id="source" class="panel" aria-label="Source preview" hidden>
+      <div class="panel-header"><h2 id="source-title"></h2><button id="close-source" type="button">Close</button></div>
+      <p id="source-status" role="status"></p>
+      <div id="source-body" tabindex="0" aria-label="Document content"></div>
+    </section>
+  </main>
+  <aside id="workflow" class="panel" aria-label="Walkthrough" hidden>
+    <div class="panel-header"><h2 id="workflow-title"></h2><button id="close-workflow" type="button">Close</button></div>
+    <p class="note">Simulated narration</p>
+    <p id="narration" role="status"></p>
+    <div id="diagram" tabindex="0" aria-label="Workflow diagram"></div>
+    <div class="controls">
+      <button id="stop" type="button">Interrupt</button>
+      <button id="save" class="primary" type="button" disabled>Save as PNG</button>
+    </div>
+  </aside>
+</body>
+</html>
