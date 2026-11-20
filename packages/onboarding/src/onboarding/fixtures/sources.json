@@ -1,0 +1,417 @@
+{
+  "documents": [
+    {
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "format": "pdf",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "relativePath": "maintenance-intake-guide.pdf"
+    },
+    {
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "format": "docx",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "relativePath": "shift-handoff-guide.docx"
+    }
+  ],
+  "passages": [
+    {
+      "passageId": "intake-checklist",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Intake checklist"
+      ],
+      "quote": "Collect the building and room or location, an issue summary, and a callback channel.",
+      "locator": {
+        "format": "pdf",
+        "page": 2,
+        "start": 76,
+        "end": 160
+      }
+    },
+    {
+      "passageId": "missing-details",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Missing details"
+      ],
+      "quote": "If a required detail is missing, ask the reporter for it and pause intake.",
+      "locator": {
+        "format": "pdf",
+        "page": 2,
+        "start": 379,
+        "end": 453
+      }
+    },
+    {
+      "passageId": "duplicate-check",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Duplicate check"
+      ],
+      "quote": "Search open tickets by building and room first, then compare the issue summaries.",
+      "locator": {
+        "format": "pdf",
+        "page": 2,
+        "start": 713,
+        "end": 794
+      }
+    },
+    {
+      "passageId": "existing-ticket",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Existing ticket"
+      ],
+      "quote": "If the same issue already has an open ticket, link the report to that ticket and stop.",
+      "locator": {
+        "format": "pdf",
+        "page": 2,
+        "start": 924,
+        "end": 1010
+      }
+    },
+    {
+      "passageId": "new-ticket",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "New ticket"
+      ],
+      "quote": "If there is no matching ticket, log a new routine maintenance ticket.",
+      "locator": {
+        "format": "pdf",
+        "page": 3,
+        "start": 70,
+        "end": 139
+      }
+    },
+    {
+      "passageId": "queue-handoff",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Queue handoff"
+      ],
+      "quote": "Assign the new ticket to the Maintenance Queue.",
+      "locator": {
+        "format": "pdf",
+        "page": 3,
+        "start": 359,
+        "end": 406
+      }
+    },
+    {
+      "passageId": "vendor-callback-gap",
+      "documentId": "maintenance-intake-guide",
+      "title": "Maintenance Intake Guide",
+      "revision": "af00401eaa6cffd4dcd57a557a90e782cbf1de26e36cd97174d42fd3de3a479f",
+      "sectionPath": [
+        "Vendor callback"
+      ],
+      "quote": "The guide gives no vendor callback deadline. Confirm the timing with the Desk Lead.",
+      "locator": {
+        "format": "pdf",
+        "page": 3,
+        "start": 619,
+        "end": 702
+      }
+    },
+    {
+      "passageId": "shift-reminder",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Shift handoff"
+      ],
+      "quote": "Send the ticket ID and latest status to the Desk Lead.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Shift handoff"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 54
+      }
+    },
+    {
+      "passageId": "intake-backup",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Shift handoff"
+      ],
+      "quote": "The Duty Intake Coordinator covers intake when the regular coordinator is away.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Shift handoff"
+        ],
+        "paragraphOrdinal": 3,
+        "start": 0,
+        "end": 79
+      }
+    },
+    {
+      "passageId": "unassigned-trigger",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Unassigned tickets"
+      ],
+      "quote": "If a routine ticket is still unassigned at the end of the next business day after logging, follow up.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Unassigned tickets"
+        ],
+        "paragraphOrdinal": 1,
+        "start": 0,
+        "end": 101
+      }
+    },
+    {
+      "passageId": "unassigned-reminder",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Unassigned tickets"
+      ],
+      "quote": "Send the ticket ID and latest status to the Desk Lead.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Unassigned tickets"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 54
+      }
+    },
+    {
+      "passageId": "queue-as-of",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Current queue"
+      ],
+      "quote": "Queue snapshot as of 2026-11-20. The following entries include completed and planned work.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Current queue"
+        ],
+        "paragraphOrdinal": 1,
+        "start": 0,
+        "end": 90
+      }
+    },
+    {
+      "passageId": "queue-completed",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Current queue"
+      ],
+      "quote": "FM-103. Replace the missing room sign in the Town Hall annex. Status completed. Priority normal. Owner Duty Intake Coordinator. Next action. Keep the closure note with the ticket. Notes. Caretaker confirmed the new sign is installed. Photo attached to the ticket on 19 November. Closure note checked by the Duty Intake Coordinator.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Current queue"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 331
+      }
+    },
+    {
+      "passageId": "queue-fm-104",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Current queue"
+      ],
+      "quote": "FM-104. Confirm access to the library annex service room. Status pending. Priority high. Owner Desk Lead. Due 2026-11-23 at 12:00 Berlin time. Next action. Confirm the access window with the site contact. Waiting on Library site contact to confirm a staffed access window. Notes. Caretaker tentatively offered Monday 07:30-08:30. Staffing confirmation is outstanding. Contractor attendance has not been promised. See the 20 November operations review.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Current queue"
+        ],
+        "paragraphOrdinal": 3,
+        "start": 0,
+        "end": 451
+      }
+    },
+    {
+      "passageId": "queue-upcoming",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Current queue"
+      ],
+      "quote": "FM-105. Review lighting reports from the community centre. Status upcoming. Priority normal. Owner Maintenance Queue Coordinator. Due 2026-11-24 at 14:00 Berlin time. Next action. Compare the open reports by room. Notes. Caller described a dark corridor. Compare with FM-106 before scheduling another visit.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Current queue"
+        ],
+        "paragraphOrdinal": 4,
+        "start": 0,
+        "end": 307
+      }
+    },
+    {
+      "passageId": "guide-location",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Tools and locations"
+      ],
+      "quote": "The Maintenance Intake Guide is in the Facilities onboarding folder. Demo mapping: S:\\Zentrale_Dienste\\Gebaeude\\Onboarding\\Aktuell. Use FM-INT-02 v2.1, effective 2 November, for current routing.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Tools and locations"
+        ],
+        "paragraphOrdinal": 1,
+        "start": 0,
+        "end": 194
+      }
+    },
+    {
+      "passageId": "handoff-location",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Tools and locations"
+      ],
+      "quote": "Store handoff notes in the Shift Handoffs folder. Demo mapping: S:\\Zentrale_Dienste\\Gebaeude\\Schichtuebergaben\\2026\\11. Keep the date and ticket ID in the filename.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Tools and locations"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 164
+      }
+    },
+    {
+      "passageId": "portal-location",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Tools and locations"
+      ],
+      "quote": "The facilities portal is https://facilities.lindenhafen.example/tickets. The .example address and drive paths are fictional demo destinations. The Windows host maps location identifiers to its own safe local folder and browser target.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Tools and locations"
+        ],
+        "paragraphOrdinal": 3,
+        "start": 0,
+        "end": 234
+      }
+    },
+    {
+      "passageId": "folder-access",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Access and working copies"
+      ],
+      "quote": "Ask the service desk for membership in FM-Desk-Read and ask the Desk Lead to approve the request. Until access is granted, use the read-only onboarding copy and ask the Duty Intake Coordinator to attach new notes to the queue.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Access and working copies"
+        ],
+        "paragraphOrdinal": 1,
+        "start": 0,
+        "end": 226
+      }
+    },
+    {
+      "passageId": "archived-routing",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Access and working copies"
+      ],
+      "quote": "Archive version 1.4 under Onboarding/Archiv. Its direct building-supervisor routing instruction expired on 2 November. Do not edit the only current shared copy while someone else is handing over a shift.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Access and working copies"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 203
+      }
+    },
+    {
+      "passageId": "access-booking",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Monday access booking"
+      ],
+      "quote": "FM-104 is waiting for the Library site contact to confirm a staffed access window for service room B-012. The Desk Lead must confirm the slot by Monday 23 November at noon. The repair visit is not booked until that confirmation is recorded.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Monday access booking"
+        ],
+        "paragraphOrdinal": 1,
+        "start": 0,
+        "end": 240
+      }
+    },
+    {
+      "passageId": "key-holder",
+      "documentId": "shift-handoff-guide",
+      "title": "Shift Handoff Guide",
+      "revision": "93d0161ef8690c3637e8f4a5ec5b38737fc9bcd9b0593e3a7976104262236745",
+      "sectionPath": [
+        "Monday access booking"
+      ],
+      "quote": "The key is held by the Library caretaker, not the external contractor. On 20 November the caretaker had offered 07:30-08:30 subject to staffing. The next coordinator should check the portal note before calling again.",
+      "locator": {
+        "format": "docx",
+        "headingPath": [
+          "Monday access booking"
+        ],
+        "paragraphOrdinal": 2,
+        "start": 0,
+        "end": 216
+      }
+    }
+  ]
+}

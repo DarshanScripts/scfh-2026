@@ -1,0 +1,689 @@
+{
+  "locations": [
+    {
+      "locationId": "facilities-onboarding-folder",
+      "label": "Facilities onboarding folder",
+      "kind": "folder"
+    },
+    {
+      "locationId": "facilities-demo-portal",
+      "label": "Facilities demo portal",
+      "kind": "browser"
+    }
+  ],
+  "claims": [
+    {
+      "claimId": "guide-location",
+      "text": "The Maintenance Intake Guide is in the Facilities onboarding folder.",
+      "passageIds": [
+        "guide-location"
+      ]
+    },
+    {
+      "claimId": "intake-requirements",
+      "text": "Before logging a ticket, collect the building and room or location, an issue summary, and a callback channel.",
+      "passageIds": [
+        "intake-checklist"
+      ]
+    },
+    {
+      "claimId": "unassigned-escalation",
+      "text": "If the ticket still has no owner at the end of the next business day after logging, send its ID and latest status to the Desk Lead.",
+      "passageIds": [
+        "unassigned-trigger",
+        "unassigned-reminder"
+      ]
+    },
+    {
+      "claimId": "next-deadline",
+      "text": "As of November 20, 2026, FM-104 is due first, on November 23 at noon Berlin time. The Desk Lead owns it and needs to confirm the access window with the site contact.",
+      "passageIds": [
+        "queue-as-of",
+        "queue-fm-104"
+      ]
+    },
+    {
+      "claimId": "duplicate-tip",
+      "text": "The Intake Coordinator recommends searching open tickets by building and room first, then comparing the issue summaries.",
+      "passageIds": [
+        "duplicate-check"
+      ]
+    },
+    {
+      "claimId": "current-routing",
+      "text": "Assign new routine maintenance tickets to the Maintenance Queue.",
+      "passageIds": [
+        "queue-handoff"
+      ]
+    },
+    {
+      "claimId": "intake-backup",
+      "text": "The Duty Intake Coordinator covers intake when the regular coordinator is away.",
+      "passageIds": [
+        "intake-backup"
+      ]
+    },
+    {
+      "claimId": "handoff-location",
+      "text": "Store handoff notes in the Shift Handoffs folder.",
+      "passageIds": [
+        "handoff-location"
+      ]
+    },
+    {
+      "claimId": "folder-access",
+      "text": "Ask the service desk for FM-Desk-Read membership, approved by the Desk Lead. Until access is granted, use the read-only onboarding copy and ask the Duty Intake Coordinator to attach new queue notes.",
+      "passageIds": [
+        "folder-access"
+      ]
+    },
+    {
+      "claimId": "access-booking",
+      "text": "FM-104 is waiting for the Library site contact to confirm a staffed access window for service room B-012. The Desk Lead needs to confirm it by November 23 at noon before a repair visit can be booked.",
+      "passageIds": [
+        "access-booking"
+      ]
+    },
+    {
+      "claimId": "key-holder",
+      "text": "The Library caretaker holds the key for FM-104. Check the latest portal note before confirming the tentative Monday 07:30-08:30 access window.",
+      "passageIds": [
+        "key-holder"
+      ]
+    }
+  ],
+  "topics": [
+    {
+      "topicId": "guide-location",
+      "cues": [
+        [
+          "where",
+          "find",
+          "folder",
+          "stored",
+          "locate"
+        ],
+        [
+          "checklist",
+          "intake guide",
+          "maintenance guide",
+          "guide for logging",
+          "instructions for logging",
+          "intake instructions",
+          "guide for a maintenance request"
+        ]
+      ],
+      "claimIds": [
+        "guide-location"
+      ]
+    },
+    {
+      "topicId": "intake-requirements",
+      "cues": [
+        [
+          "need",
+          "required",
+          "collect",
+          "checklist",
+          "gather",
+          "details",
+          "information"
+        ],
+        [
+          "ticket",
+          "maintenance request",
+          "before logging",
+          "before i log",
+          "before entering",
+          "intake"
+        ]
+      ],
+      "claimIds": [
+        "intake-requirements"
+      ]
+    },
+    {
+      "topicId": "unassigned-escalation",
+      "cues": [
+        [
+          "unassigned",
+          "no owner",
+          "without an owner",
+          "hasn t been assigned",
+          "nobody owns",
+          "isn t assigned"
+        ],
+        [
+          "ticket",
+          "request",
+          "report"
+        ]
+      ],
+      "claimIds": [
+        "unassigned-escalation"
+      ]
+    },
+    {
+      "topicId": "next-deadline",
+      "cues": [
+        [
+          "open",
+          "queue",
+          "pending",
+          "handoff",
+          "fm 104",
+          "outstanding"
+        ],
+        [
+          "due first",
+          "earliest",
+          "deadline",
+          "most urgent",
+          "prioritise",
+          "prioritize",
+          "next due",
+          "comes up first"
+        ]
+      ],
+      "claimIds": [
+        "next-deadline"
+      ]
+    },
+    {
+      "topicId": "duplicate-tip",
+      "cues": [
+        [
+          "duplicate",
+          "duplicates",
+          "already logged",
+          "already reported",
+          "same problem",
+          "same issue"
+        ],
+        [
+          "spot",
+          "how",
+          "tell",
+          "check",
+          "find",
+          "tip",
+          "tips",
+          "described"
+        ]
+      ],
+      "claimIds": [
+        "duplicate-tip"
+      ]
+    },
+    {
+      "topicId": "current-routing",
+      "cues": [
+        [
+          "assign",
+          "route",
+          "send",
+          "handoff",
+          "hand it off"
+        ],
+        [
+          "new maintenance ticket",
+          "new ticket",
+          "routine request",
+          "routine maintenance ticket"
+        ]
+      ],
+      "claimIds": [
+        "current-routing"
+      ]
+    },
+    {
+      "topicId": "intake-backup",
+      "cues": [
+        [
+          "backup",
+          "covers",
+          "cover",
+          "steps in",
+          "fills in"
+        ],
+        [
+          "intake",
+          "regular coordinator"
+        ]
+      ],
+      "claimIds": [
+        "intake-backup"
+      ]
+    },
+    {
+      "topicId": "handoff-location",
+      "cues": [
+        [
+          "where",
+          "store",
+          "folder",
+          "file"
+        ],
+        [
+          "handoff notes",
+          "shift materials"
+        ]
+      ],
+      "claimIds": [
+        "handoff-location"
+      ]
+    },
+    {
+      "topicId": "folder-access",
+      "cues": [
+        [
+          "access",
+          "permission",
+          "permissions",
+          "cannot open",
+          "can t open"
+        ],
+        [
+          "folder",
+          "drive",
+          "fm desk read",
+          "onboarding"
+        ]
+      ],
+      "claimIds": [
+        "folder-access"
+      ]
+    },
+    {
+      "topicId": "access-booking",
+      "cues": [
+        [
+          "fm 104",
+          "library access"
+        ],
+        [
+          "waiting",
+          "blocked",
+          "hold",
+          "delay",
+          "next action"
+        ]
+      ],
+      "claimIds": [
+        "access-booking"
+      ]
+    },
+    {
+      "topicId": "key-holder",
+      "cues": [
+        [
+          "key",
+          "keys"
+        ],
+        [
+          "fm 104",
+          "library",
+          "b 012"
+        ]
+      ],
+      "claimIds": [
+        "key-holder"
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "recordId": "guide-location",
+      "taskId": "maintenance-intake",
+      "topicId": "guide-location",
+      "applicability": "Current onboarding materials",
+      "passageIds": [
+        "guide-location"
+      ],
+      "interviewTurnIds": [
+        "shift-locations"
+      ],
+      "capturedOn": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The handoff guide confirms the folder."
+    },
+    {
+      "recordId": "intake-requirements",
+      "taskId": "maintenance-intake",
+      "topicId": "intake-requirements",
+      "applicability": "Routine maintenance intake",
+      "passageIds": [
+        "intake-checklist"
+      ],
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The intake checklist defines the required fields."
+    },
+    {
+      "recordId": "unassigned-escalation",
+      "taskId": "shift-handoff",
+      "topicId": "unassigned-escalation",
+      "applicability": "Routine tickets still unassigned at the end of the next business day after logging",
+      "passageIds": [
+        "unassigned-trigger",
+        "unassigned-reminder",
+        "shift-reminder"
+      ],
+      "interviewTurnIds": [
+        "shift-recent-case"
+      ],
+      "capturedOn": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The dedicated escalation section is the primary reference. The handoff section corroborates the reminder."
+    },
+    {
+      "recordId": "repeated-shift-reminder",
+      "taskId": "shift-handoff",
+      "topicId": "unassigned-escalation",
+      "applicability": "Message contents for Desk Lead escalation",
+      "passageIds": [
+        "shift-reminder"
+      ],
+      "disposition": "duplicate",
+      "canonicalRecordId": "unassigned-escalation",
+      "reviewerRole": "Desk Lead",
+      "reason": "The same sentence appears in both Word sections."
+    },
+    {
+      "recordId": "next-deadline",
+      "taskId": "shift-handoff",
+      "topicId": "next-deadline",
+      "applicability": "Queue snapshot dated November 20, 2026",
+      "passageIds": [
+        "queue-as-of",
+        "queue-fm-104"
+      ],
+      "interviewTurnIds": [
+        "shift-open-queue"
+      ],
+      "capturedOn": "2026-11-20",
+      "effectiveFrom": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "FM-104 is the earliest dated open item in the snapshot.",
+      "meetingTurnIds": [
+        "meeting-access-window"
+      ]
+    },
+    {
+      "recordId": "duplicate-tip",
+      "taskId": "maintenance-intake",
+      "topicId": "duplicate-tip",
+      "applicability": "Checking for duplicates in routine intake",
+      "passageIds": [
+        "duplicate-check"
+      ],
+      "interviewTurnIds": [
+        "intake-duplicate-tip"
+      ],
+      "capturedOn": "2026-11-16",
+      "effectiveFrom": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The process owner published the Intake Coordinator's tip alongside the duplicate check.",
+      "meetingTurnIds": [
+        "meeting-duplicates"
+      ]
+    },
+    {
+      "recordId": "current-routing",
+      "taskId": "maintenance-intake",
+      "topicId": "current-routing",
+      "applicability": "New routine maintenance tickets",
+      "passageIds": [
+        "queue-handoff"
+      ],
+      "interviewTurnIds": [
+        "intake-old-routing"
+      ],
+      "capturedOn": "2026-11-16",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The current guide assigns work through the Maintenance Queue."
+    },
+    {
+      "recordId": "old-routing",
+      "taskId": "maintenance-intake",
+      "topicId": "current-routing",
+      "applicability": "Previous process for routine maintenance tickets",
+      "interviewTurnIds": [
+        "intake-old-routing"
+      ],
+      "capturedOn": "2026-11-16",
+      "disposition": "superseded",
+      "canonicalRecordId": "current-routing",
+      "reviewerRole": "Desk Lead",
+      "reason": "FM-INT-02 v2.1 took effect on 2 November. The former direct email route remains only in archived version 1.4.",
+      "effectiveFrom": "2026-11-02"
+    },
+    {
+      "recordId": "vendor-callback",
+      "taskId": "maintenance-intake",
+      "topicId": "vendor-callback",
+      "applicability": "Vendor callbacks on routine requests",
+      "passageIds": [
+        "vendor-callback-gap"
+      ],
+      "interviewTurnIds": [
+        "intake-callback",
+        "shift-callback"
+      ],
+      "disposition": "conflict",
+      "reviewerRole": "Desk Lead",
+      "reason": "Mara recalled four hours for a previous site arrangement, while Selin recalled next-business-day callbacks. The Desk Lead could not confirm a department-wide deadline and kept it out of actionable instructions.",
+      "meetingTurnIds": [
+        "meeting-vendor-timing"
+      ]
+    },
+    {
+      "recordId": "social-routine",
+      "taskId": "shift-handoff",
+      "topicId": "social-routine",
+      "applicability": "Former staff social activity",
+      "interviewTurnIds": [
+        "shift-off-topic"
+      ],
+      "capturedOn": "2026-11-20",
+      "disposition": "excluded",
+      "reviewerRole": "Desk Lead",
+      "reason": "The remark is outside the scope of onboarding procedures."
+    },
+    {
+      "recordId": "intake-backup",
+      "taskId": "shift-handoff",
+      "topicId": "intake-backup",
+      "applicability": "An absent intake coordinator",
+      "passageIds": [
+        "intake-backup"
+      ],
+      "interviewTurnIds": [
+        "shift-locations"
+      ],
+      "capturedOn": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The handoff guide names the backup role."
+    },
+    {
+      "recordId": "handoff-location",
+      "taskId": "shift-handoff",
+      "topicId": "handoff-location",
+      "applicability": "Storage for shift handoff notes",
+      "passageIds": [
+        "handoff-location"
+      ],
+      "interviewTurnIds": [
+        "shift-locations"
+      ],
+      "capturedOn": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "The handoff guide confirms the storage location."
+    },
+    {
+      "recordId": "folder-access",
+      "taskId": "shift-handoff",
+      "topicId": "folder-access",
+      "applicability": "Facilities desk handoff snapshot on 20 November 2026",
+      "passageIds": [
+        "folder-access"
+      ],
+      "interviewTurnIds": [],
+      "meetingTurnIds": [
+        "meeting-access"
+      ],
+      "capturedOn": "2026-11-20",
+      "effectiveFrom": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "Jonas Weber confirmed the action in the operations review and approved its inclusion in the handoff guide."
+    },
+    {
+      "recordId": "access-booking",
+      "taskId": "shift-handoff",
+      "topicId": "access-booking",
+      "applicability": "Facilities desk handoff snapshot on 20 November 2026",
+      "passageIds": [
+        "access-booking"
+      ],
+      "interviewTurnIds": [],
+      "meetingTurnIds": [
+        "meeting-access-window"
+      ],
+      "capturedOn": "2026-11-20",
+      "effectiveFrom": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "Jonas Weber confirmed the action in the operations review and approved its inclusion in the handoff guide."
+    },
+    {
+      "recordId": "key-holder",
+      "taskId": "shift-handoff",
+      "topicId": "key-holder",
+      "applicability": "Facilities desk handoff snapshot on 20 November 2026",
+      "passageIds": [
+        "key-holder"
+      ],
+      "interviewTurnIds": [],
+      "meetingTurnIds": [
+        "meeting-access-window"
+      ],
+      "capturedOn": "2026-11-20",
+      "effectiveFrom": "2026-11-20",
+      "disposition": "approved",
+      "reviewerRole": "Desk Lead",
+      "reason": "Jonas Weber confirmed the action in the operations review and approved its inclusion in the handoff guide."
+    }
+  ],
+  "workflow": {
+    "workflowId": "maintenance-intake",
+    "title": "Log a routine maintenance request",
+    "steps": [
+      {
+        "stepId": "check-details",
+        "kind": "decision",
+        "label": "Required details present?",
+        "narration": "First, check for the building and room or location, a summary of the issue, and a callback channel.",
+        "passageIds": [
+          "intake-checklist"
+        ],
+        "edges": [
+          {
+            "label": "Missing",
+            "toStepId": "request-details"
+          },
+          {
+            "label": "Complete",
+            "toStepId": "check-duplicate"
+          }
+        ]
+      },
+      {
+        "stepId": "request-details",
+        "kind": "exception",
+        "label": "Ask for details and pause",
+        "narration": "If any required detail is missing, ask the reporter for it and pause intake until you have it.",
+        "passageIds": [
+          "missing-details"
+        ],
+        "edges": []
+      },
+      {
+        "stepId": "check-duplicate",
+        "kind": "decision",
+        "label": "Same issue already logged?",
+        "narration": "Once the details are complete, check for a duplicate. Search open tickets by building and room first, then compare the issue summaries.",
+        "passageIds": [
+          "duplicate-check"
+        ],
+        "edges": [
+          {
+            "label": "Match",
+            "toStepId": "link-duplicate"
+          },
+          {
+            "label": "New issue",
+            "toStepId": "log-ticket"
+          }
+        ]
+      },
+      {
+        "stepId": "link-duplicate",
+        "kind": "exception",
+        "label": "Link the report and stop",
+        "narration": "If an open ticket covers the same issue, link this report to that ticket and stop intake for the new report.",
+        "passageIds": [
+          "existing-ticket"
+        ],
+        "edges": []
+      },
+      {
+        "stepId": "log-ticket",
+        "kind": "action",
+        "label": "Log a new ticket",
+        "narration": "If there is no matching ticket, log a new routine maintenance ticket.",
+        "passageIds": [
+          "new-ticket"
+        ],
+        "edges": [
+          {
+            "label": "Ticket logged",
+            "toStepId": "assign-queue"
+          }
+        ]
+      },
+      {
+        "stepId": "assign-queue",
+        "kind": "handoff",
+        "label": "Assign to the Maintenance Queue",
+        "narration": "Assign the new ticket to the Maintenance Queue so the next team can take it from there.",
+        "passageIds": [
+          "queue-handoff"
+        ],
+        "edges": [
+          {
+            "label": "Timing note",
+            "toStepId": "callback-gap"
+          }
+        ]
+      },
+      {
+        "stepId": "callback-gap",
+        "kind": "gap",
+        "label": "Vendor timing is undocumented",
+        "narration": "The guide gives no vendor callback deadline. Confirm the timing with the Desk Lead.",
+        "passageIds": [
+          "vendor-callback-gap"
+        ],
+        "edges": []
+      }
+    ]
+  }
+}
