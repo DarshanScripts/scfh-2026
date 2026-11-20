@@ -10,6 +10,17 @@ function normalize(text: string) {
   return text.replace(/\s+/gu, " ").trim();
 }
 
+function scrollToPassage(target: Element) {
+  requestAnimationFrame(() => {
+    if (!target.isConnected) return;
+    target.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  });
+}
+
 function locatedRange(nodes: Text[], start: number, end: number, quote: string): Range | null {
   const points: (Point | null)[] = [];
   const kept = [];
@@ -77,7 +88,7 @@ function openWord(source: Source, container: HTMLElement): boolean {
   container.replaceChildren(article);
   const nearest = headings.filter(item => item.path.every((part, i) => part === locator.headingPath[i]))
     .sort((a, b) => b.path.length - a.path.length)[0];
-  (paragraph ?? nearest?.element ?? article).scrollIntoView({ block: "nearest" });
+  scrollToPassage(paragraph?.querySelector("mark") ?? paragraph ?? nearest?.element ?? article);
   return highlight;
 }
 
@@ -112,11 +123,17 @@ async function openPdf(source: Source, container: HTMLElement): Promise<boolean>
       page.render({ canvas, viewport }).promise,
       textLayer.render(),
     ]);
-    if (source.status !== "exact" || pageNumber !== locator.page) return false;
+    if (source.status !== "exact" || pageNumber !== locator.page) {
+      scrollToPassage(wrapper);
+      return false;
+    }
     const nodes = textLayer.textDivs.map(span => span.firstChild)
       .filter((child): child is Text => child instanceof Text);
     const range = locatedRange(nodes, locator.start, locator.end, source.passage.quote);
-    if (!range) return false;
+    if (!range) {
+      scrollToPassage(wrapper);
+      return false;
+    }
     const origin = wrapper.getBoundingClientRect();
     for (const rect of range.getClientRects()) {
       if (rect.width === 0) continue;
@@ -129,7 +146,7 @@ async function openPdf(source: Source, container: HTMLElement): Promise<boolean>
       wrapper.append(highlight);
     }
     const visible = wrapper.querySelector(".source-highlight");
-    visible?.scrollIntoView({ block: "nearest" });
+    if (visible) scrollToPassage(visible);
     return visible !== null;
   } finally {
     await task.destroy();

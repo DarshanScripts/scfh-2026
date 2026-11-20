@@ -22,7 +22,7 @@ button.primary { color: white; background: #17605d; border-color: #17605d; }
 button.primary:hover { background: #104846; }
 button.citation { display: block; margin: .4rem 0; text-align: left; text-decoration: underline; color: #135b70; }
 #answer:empty, #source-status:empty { display: none; }
-#source-body { max-height: 32rem; overflow: auto; margin-top: 1rem; background: #e6edf0; }
+#source-body { max-height: 32rem; overflow: auto; overflow-anchor: none; margin-top: 1rem; background: #e6edf0; }
 .word-page { margin: 1rem; padding: 1.25rem; background: white; }
 .word-page h2 { margin-top: 1.5rem; }
 .source-highlight { background: #ffe377; color: inherit; }
