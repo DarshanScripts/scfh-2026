@@ -1,13 +1,11 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { AccessToken, RoomAgentDispatch, RoomConfiguration, RoomServiceClient } from 'livekit-server-sdk';
+import { anthropicSettings } from './anthropic.mjs';
 
 const host = '127.0.0.1';
 const menuPort = Number(process.env.DEMO_PORT || 4321);
@@ -16,49 +14,29 @@ const electronPath = createRequire(import.meta.url)('electron');
 const windowScript = fileURLToPath(new URL('./floating-window.cjs', import.meta.url));
 const windowEnv = Object.fromEntries(Object.entries(process.env).filter(([name]) =>
   /^(path|pathext|windir|systemroot|systemdrive|userprofile|localappdata|appdata|programdata|temp|tmp)$/i.test(name)));
-const livekitPort = Number(process.env.DEMO_LIVEKIT_PORT || 7880);
-const diagnosticSpeech = process.env.DEMO_SPEECH === 'openrouter';
 const avatarEnabled = process.env.ENABLE_AVATAR === '1';
-const livekitURL = diagnosticSpeech ? 'ws://' + host + ':' + livekitPort : process.env.LIVEKIT_URL;
+const { LIVEKIT_URL: livekitURL, LIVEKIT_API_KEY: key, LIVEKIT_API_SECRET: secret } = process.env;
 const agentName = 'scfh-desktop-demo';
-const serverName = process.platform === 'win32' ? 'livekit-server.exe' : 'livekit-server';
-const bundled = resolve('.hcu', 'livekit', serverName);
-const binary = process.env.LIVEKIT_SERVER_COMMAND || (existsSync(bundled) ? bundled : serverName);
 
-if (!process.env.OPENROUTER_API_KEY?.trim()) {
-  throw new Error('Set OPENROUTER_API_KEY in .env before starting the demo.');
-}
+anthropicSettings();
 
-if (avatarEnabled && diagnosticSpeech) {
-  throw new Error('Beyond Presence needs a LiveKit room reachable from the cloud. Clear DEMO_SPEECH to use the avatar.');
-}
 if (avatarEnabled && !(process.env.BEYOND_PRESENCE_API_KEY?.trim() || process.env.BEY_API_KEY?.trim())) {
   throw new Error('Set BEYOND_PRESENCE_API_KEY in .env to enable the avatar.');
 }
 
-if (!diagnosticSpeech) {
-  const { LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET } = process.env;
-  if (!LIVEKIT_URL || !LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
-    throw new Error('Set LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET in .env for LiveKit Inference.');
-  }
-  try {
-    await new RoomServiceClient(LIVEKIT_URL.replace(/^wss:/, 'https:'), LIVEKIT_API_KEY, LIVEKIT_API_SECRET).listRooms();
-  } catch (error) {
-    const status = typeof error.status === 'number' ? ' (HTTP ' + error.status + ')' : '';
-    throw new Error('Could not authenticate the LiveKit Cloud project' + status + '. Check the LiveKit settings in .env.');
-  }
+if (!livekitURL || !key || !secret) {
+  throw new Error('Set LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET in .env for LiveKit Inference.');
+}
+try {
+  await new RoomServiceClient(livekitURL.replace(/^wss:/, 'https:'), key, secret).listRooms();
+} catch (error) {
+  const status = typeof error.status === 'number' ? ' (HTTP ' + error.status + ')' : '';
+  throw new Error('Could not authenticate the LiveKit Cloud project' + status + '. Check the LiveKit settings in .env.');
 }
 
-const key = diagnosticSpeech ? 'scfh-' + randomUUID() : process.env.LIVEKIT_API_KEY;
-const secret = diagnosticSpeech ? randomUUID() + randomUUID() : process.env.LIVEKIT_API_SECRET;
 const workerEnv = {
   ...process.env,
-  LIVEKIT_URL: livekitURL,
-  LIVEKIT_API_KEY: key,
-  LIVEKIT_API_SECRET: secret,
   LIVEKIT_AGENT_NAME: agentName,
-  LIVEKIT_LOCAL_DEMO: diagnosticSpeech ? '1' : '0',
-  ENABLE_AVATAR: avatarEnabled ? '1' : '0',
 };
 const [html, script, sdk] = await Promise.all([
   readFile(new URL('./demo/index.html', import.meta.url)),
@@ -128,48 +106,8 @@ menu.once('error', (error) => {
   stop(1);
 });
 
-function startMenu() {
-  launch(process.execPath, ['agent.mjs', 'start'], { env: workerEnv, stdio: 'inherit' }, 'Desktop agent');
-  menu.listen(menuPort, host, () => {
-    launch(electronPath, [windowScript, origin], { env: windowEnv, stdio: 'inherit' }, 'Floating voice window', true);
-    console.log('Starting the floating voice window.');
-  });
-}
-
-if (!diagnosticSpeech) {
-  startMenu();
-} else {
-  await startLocalDemo();
-}
-
-async function startLocalDemo() {
-  // Use loopback and fresh room credentials for each diagnostic process.
-  const localConfig = [
-    'port: ' + livekitPort,
-    'bind_addresses: [' + host + ']',
-    'rtc:',
-    '  tcp_port: ' + (livekitPort + 1),
-    '  udp_port: ' + (livekitPort + 2),
-    '  enable_loopback_candidate: true',
-  ].join('\n');
-  launch(binary, ['--config-body', localConfig, '--node-ip', host], {
-    env: { ...process.env, LIVEKIT_KEYS: key + ': ' + secret },
-    stdio: 'inherit',
-  }, 'LiveKit server');
-
-  for (let attempt = 0; attempt < 40 && !stopping; attempt++) {
-    const ready = await fetch('http://' + host + ':' + livekitPort, {
-      signal: AbortSignal.timeout(500),
-    }).then((response) => response.ok).catch(() => false);
-    if (ready) {
-      startMenu();
-      break;
-    }
-    if (attempt === 39) {
-      console.error('The local LiveKit server did not become ready.');
-      stop(1);
-    } else {
-      await delay(250);
-    }
-  }
-}
+launch(process.execPath, ['agent.mjs', 'start'], { env: workerEnv, stdio: 'inherit' }, 'Desktop agent');
+menu.listen(menuPort, host, () => {
+  launch(electronPath, [windowScript, origin], { env: windowEnv, stdio: 'inherit' }, 'Floating voice window', true);
+  console.log('Starting the floating voice window.');
+});

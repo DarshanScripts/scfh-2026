@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Workflow Canvas</title>
+<style>
+  body { margin: 0; background: #faf9f6; color: #212529; font: 15px system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 14px; }
+  button { padding: 6px 12px; }
+  iframe { width: 100%; height: calc(100vh - 60px); display: block; border: 0; background: #fff; }
+</style>
+<header>
+  <button id="advance" disabled>Reveal next step</button>
+  <span id="status" role="status">Loading canvas…</span>
+</header>
+<iframe title="Workflow diagram" sandbox="allow-scripts"></iframe>
+<script src="/canvas.js" defer></script>
+</html>

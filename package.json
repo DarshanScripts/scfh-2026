@@ -8,6 +8,9 @@
   },
   "scripts": {
     "check:desktop": "node --env-file-if-exists=.env check-desktop.mjs",
+    "check:excalidraw": "node check-excalidraw.mjs",
+    "preview:excalidraw": "node preview-excalidraw.mjs",
+    "test:excalidraw-window": "node --test test/excalidraw-window.test.mjs",
     "test:desktop:windows": "node --env-file-if-exists=.env test/desktop-windows.mjs",
     "test:orb": "node --test test/floating-window.test.mjs",
     "test:voice": "node --env-file-if-exists=.env test/voice-room.mjs",
@@ -16,9 +19,10 @@
     "start": "start.cmd"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.33.1",
     "@livekit/agents": "1.10.1",
+    "@livekit/agents-plugin-anthropic": "1.10.1",
     "@livekit/agents-plugin-bey": "1.10.1",
-    "@livekit/agents-plugin-openai": "1.10.1",
     "@modelcontextprotocol/client": "2.3.1",
     "electron": "45.4.1",
     "livekit-client": "2.25.0",

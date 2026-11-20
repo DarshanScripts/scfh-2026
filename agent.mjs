@@ -1,24 +1,16 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseEnv } from 'node:util';
 import { cli, defineAgent, inference, ServerOptions, voice } from '@livekit/agents';
 import { AvatarSession } from '@livekit/agents-plugin-bey';
-import { LLM, STT as GatewaySTT, TTS as GatewayTTS } from '@livekit/agents-plugin-openai';
-import { createDesktopTools, openRouterURL } from './desktop.mjs';
+import { LLM } from '@livekit/agents-plugin-anthropic';
+import { anthropicSettings, createAnthropicClient } from './anthropic.mjs';
+import { createDesktopTools } from './desktop.mjs';
 import { createDesktopActionGuard, desktopInstructions } from './desktop-harness.mjs';
+import { createWorkflowTools } from './workflow-tools.mjs';
+import { listenForAvatarAudio } from './workflow-playback.mjs';
 
 const workerName = process.env.LIVEKIT_AGENT_NAME?.trim() || 'handbook-windows';
-const envFile = '.env';
-const fileSettings = existsSync(envFile) ? parseEnv(readFileSync(envFile, 'utf8')) : {};
-const model = fileSettings.OPENROUTER_MODEL?.trim() || process.env.OPENROUTER_MODEL?.trim() || 'google/gemma-4-26b-a4b-it';
-const reasoningEffort = fileSettings.REASONING_EFFORT?.trim() || process.env.REASONING_EFFORT?.trim() || 'none';
-if (!['none', 'minimal', 'low', 'medium', 'high'].includes(reasoningEffort)) {
-  throw new Error('REASONING_EFFORT must be none, minimal, low, medium, or high.');
-}
 const language = process.env.AGENT_LANGUAGE || 'en';
 const avatarEnabled = process.env.ENABLE_AVATAR === '1';
-const localDemo = process.env.LIVEKIT_LOCAL_DEMO === '1';
-const diagnosticSpeech = localDemo && process.env.DEMO_SPEECH === 'openrouter';
 const cartesiaModel = process.env.CARTESIA_TTS_MODEL?.trim() || 'sonic-3.6';
 const cartesiaVoice = process.env.CARTESIA_VOICE_ID?.trim() || '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc';
 
@@ -32,29 +24,24 @@ function required(...names) {
 
 export default defineAgent({
   entry: async (ctx) => {
-    const apiKey = required('OPENROUTER_API_KEY');
-    const gateway = { apiKey, baseURL: openRouterURL };
+    const settings = anthropicSettings();
+    const { model } = settings;
+    const client = await createAnthropicClient(settings);
     const desktopGuard = createDesktopActionGuard();
+    let avatarAudio;
+    const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal });
+    ctx.addShutdownCallback(() => workflows.close());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
-      stt: diagnosticSpeech ? new GatewaySTT({
-        ...gateway,
-        model: process.env.OPENROUTER_STT_MODEL || 'openai/whisper-large-v3',
-        language,
-        useRealtime: false,
-      }) : new inference.STT({ model: 'deepgram/nova-3', language }),
-      llm: new LLM({ ...gateway, model, reasoningEffort, parallelToolCalls: false }),
-      tts: diagnosticSpeech ? new GatewayTTS({
-        ...gateway,
-        model: process.env.OPENROUTER_TTS_MODEL || 'google/gemini-3.1-flash-tts-preview',
-        voice: process.env.OPENROUTER_TTS_VOICE || 'Kore',
-      }) : new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
-      ...(diagnosticSpeech && { turnHandling: { turnDetection: 'vad' } }),
-      tools: [createDesktopTools({ apiKey, model, reasoningEffort, guard: desktopGuard })],
+      stt: new inference.STT({ model: 'deepgram/nova-3', language }),
+      llm: new LLM({ client, model, parallelToolCalls: false }),
+      tts: new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
+      tools: [createDesktopTools({ client, model, guard: desktopGuard }), ...workflows.tools],
     });
     const agent = voice.Agent.create({
       instructions: desktopInstructions(language),
       onUserTurnCompleted() {
+        workflows.interrupt();
         desktopGuard.beginTurn();
       },
       async *llmNode(ctx, chatCtx, toolCtx, settings) {
@@ -92,6 +79,8 @@ export default defineAgent({
         ...(process.env.BEY_AVATAR_ID && { avatarId: process.env.BEY_AVATAR_ID }),
       });
       ctx.addShutdownCallback(() => avatar.aclose());
+      avatarAudio = listenForAvatarAudio(ctx.room, avatar.avatarIdentity);
+      ctx.addShutdownCallback(() => avatarAudio.close());
       await avatar.start(session, ctx.room);
     }
     await session.start({
@@ -105,10 +94,4 @@ export default defineAgent({
 cli.runApp(new ServerOptions({
   agent: fileURLToPath(import.meta.url),
   agentName: workerName,
-  // A local desktop demo has no other worker to take over during a CPU spike.
-  ...(localDemo && {
-    loadFunc: async () => 0,
-    host: '127.0.0.1',
-    port: 0,
-  }),
 }));

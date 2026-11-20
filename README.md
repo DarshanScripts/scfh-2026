@@ -3,13 +3,11 @@ Smart City Future Hackathon 2026
 
 ## LiveKit desktop voice agent
 
-The worker controls native apps and browsers on the signed-in Windows desktop through [CursorTouch Windows-MCP](https://github.com/CursorTouch/Windows-MCP), pinned to version 0.8.9. [LiveKit Inference](https://docs.livekit.io/agents/models/tts/cartesia/) provides Deepgram speech recognition and streaming Cartesia Sonic 3.6. Set the LiveKit project credentials in `.env` to use both. The worker reads `OPENROUTER_MODEL` and `REASONING_EFFORT` from `.env` before checking the process environment. Their defaults are Gemma 4 26B A4B and `none`. Use `REASONING_EFFORT=none` for both conversation and screenshot interpretation.
+The worker controls native apps and browsers on the signed-in Windows desktop through [CursorTouch Windows-MCP](https://github.com/CursorTouch/Windows-MCP), pinned to version 0.8.9. LiveKit Inference provides Deepgram speech recognition and streaming Cartesia Sonic 3.6. Set the LiveKit project credentials in `.env` to use both. The worker also reads `ANTHROPIC_API_KEY`, `LLM_MODEL`, and `REASONING_EFFORT` from `.env` before checking the process environment. Conversation and screenshot interpretation both use the Anthropic Messages API. `LLM_MODEL` defaults to `claude-sonnet-5-5`, and `REASONING_EFFORT` defaults to `none`. With Sonnet 5.5, `none` turns off thinking before the response and allows short thinking updates between tool calls.
 
 ### Use the floating voice agent
 
 The desktop orb creates a room in your LiveKit Cloud project when you click its microphone. The worker runs on your Windows PC and uses LiveKit Inference for speech. To select another voice, set `CARTESIA_VOICE_ID`.
-
-For local testing without LiveKit Cloud credentials, set `$env:DEMO_SPEECH = 'openrouter'` in PowerShell before starting the demo. This mode uses OpenRouter speech and needs the [LiveKit Server binary](https://github.com/livekit/livekit/releases/tag/v1.13.11) under `.hcu/livekit/` or on `PATH`. Clear the override with `Remove-Item Env:DEMO_SPEECH` to use LiveKit Cloud again.
 
 1. Run `start.cmd` in an unlocked Windows desktop session. A floating orb appears near the bottom right. Drag its rim to move it.
 2. Click the microphone in the orb. When the rim turns green, say **“Open Calculator.”** Hover over the center to see the call status.
@@ -24,7 +22,7 @@ See [Windows acceptance](docs/windows-acceptance.md) for the baseline audit and 
 ### Setup
 
 1. Install Node.js 22 or newer and run `npm ci` in this repository.
-2. Use the existing `.env`, or copy `.env.example` to `.env` and fill in your LiveKit Cloud and OpenRouter credentials.
+2. Use the existing `.env`, or copy `.env.example` to `.env` and fill in your LiveKit Cloud and Anthropic credentials.
 3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) on Windows and run from your unlocked desktop. The worker uses `uvx` to start the pinned package over stdio. The first run may download Python 3.14 and dependencies. If needed, put the full path to `uvx.exe` in `WINDOWS_MCP_UVX`. Linux desktop control requires a separate driver.
 
 ### Connect to LiveKit Cloud
@@ -36,7 +34,7 @@ npm run dev
 
 The first command verifies that Windows-MCP can read the local desktop. The second registers the worker with LiveKit. Use the [LiveKit Agent Console](https://docs.livekit.io/testing/agent-console/) or a LiveKit client that dispatches `handbook-windows`. For a room you already know the name of, use `npm run connect -- --room ROOM_NAME` instead of `npm run dev`.
 
-Start with “Which windows are open?” Then try “Open Calculator.” The agent reads app controls from Windows-MCP snapshots and sends mouse and keyboard input to the desktop. If it needs a screenshot, the worker sends that image to the selected OpenRouter model for interpretation.
+Start with “Which windows are open?” Then try “Open Calculator.” The agent reads app controls from Windows-MCP snapshots and sends mouse and keyboard input to the desktop. If it needs a screenshot, the worker sends that image to the configured Claude model for interpretation.
 
 For the Beyond Presence avatar, set `ENABLE_AVATAR=1` and `BEYOND_PRESENCE_API_KEY`. `BEY_AVATAR_ID` is optional. Use the screen share feature in your LiveKit client to show the controlled desktop alongside the avatar. The desktop control is local to the worker even when the viewer connects from a different computer.
 

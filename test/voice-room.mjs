@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { inference, initializeLogger } from '@livekit/agents';
 import {
   AudioFrame, AudioSource, AudioStream, LocalAudioTrack,
   Room, RoomEvent, TrackKind, TrackSource, dispose,
@@ -11,8 +12,7 @@ import {
 
 assert.equal(process.platform, 'win32', 'Run the native voice smoke test on Windows.');
 const base = 'http://127.0.0.1:' + Number(process.env.DEMO_PORT || 4321);
-const key = process.env.OPENROUTER_API_KEY;
-assert(key, 'Set OPENROUTER_API_KEY before running the voice smoke test.');
+initializeLogger({ level: 'error' });
 const root = resolve('.hcu');
 await mkdir(root, { recursive: true });
 const scratch = await mkdtemp(resolve(root, 'voice-test-'));
@@ -24,6 +24,12 @@ const text = language === 'de'
   ? 'Klicke im Fenster SCFH Voice Check auf die Schaltfläche.'
   : 'Click the button in the SCFH Voice Check window.';
 const rate = 24000;
+const fixtureTTS = new inference.TTS({
+  model: 'cartesia/' + (process.env.CARTESIA_TTS_MODEL?.trim() || 'sonic-3.6'),
+  voice: process.env.CARTESIA_VOICE_ID?.trim() || '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc',
+  language,
+  sampleRate: rate,
+});
 const room = new Room();
 const source = new AudioSource(rate, 1);
 let form;
@@ -61,20 +67,20 @@ async function waitFor(test, label, milliseconds) {
 }
 
 try {
-  const request = await fetch('https://openrouter.ai/api/v1/audio/speech', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: process.env.OPENROUTER_TTS_MODEL || 'google/gemini-3.1-flash-tts-preview',
-      voice: process.env.OPENROUTER_TTS_VOICE || 'Kore',
-      response_format: 'pcm',
-      input: text,
-    }),
-    signal: AbortSignal.timeout(20_000),
-  });
-  assert(request.ok, 'Fixture speech generation failed with HTTP ' + request.status);
-  const raw = await request.arrayBuffer();
-  const pcm = new Int16Array(raw);
+  const speech = fixtureTTS.stream();
+  const frames = [];
+  try {
+    speech.pushText(text);
+    speech.endInput();
+    for await (const { frame } of speech) {
+      if (frame) frames.push(Buffer.from(frame.data.buffer, frame.data.byteOffset, frame.data.byteLength));
+    }
+  } finally {
+    speech.close();
+    await fixtureTTS.close();
+  }
+  const raw = Buffer.concat(frames);
+  const pcm = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength / 2);
   assert(pcm.length > rate, 'Fixture speech response did not contain enough samples.');
   form = spawn('powershell.exe', [
     '-NoProfile', '-STA', '-File', resolve('test/desktop-form.ps1'),
