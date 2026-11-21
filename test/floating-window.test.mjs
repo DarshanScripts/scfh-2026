@@ -221,10 +221,11 @@ test('the avatar and canvas stay side by side and yield the desktop during compu
     await canvas.getByRole('button', { name: 'Save as PNG' }).waitFor();
     await canvas.getByText('Check the source.').waitFor();
     assert.equal(await canvas.locator('[data-symbol="document"]').count(), 1);
+    await canvas.getByRole('button', { name: 'Fit view' }).click();
     const fitted = await scene.getAttribute('viewBox');
     await canvas.getByRole('button', { name: 'Zoom in' }).click();
     const zoomed = await canvas.locator('svg').getAttribute('viewBox');
-    assert.notEqual(zoomed, '0 0 1000 600');
+    assert.notEqual(zoomed, fitted);
     const map = await canvas.locator('svg').boundingBox();
     await canvas.mouse.move(map.x + map.width / 2, map.y + map.height / 2);
     await canvas.mouse.down();
