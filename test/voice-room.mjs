@@ -9,6 +9,7 @@ import {
   AudioFrame, AudioSource, AudioStream, LocalAudioTrack,
   Room, RoomEvent, TrackKind, TrackSource, dispose,
 } from '@livekit/rtc-node';
+import { avatarModeAttribute, voiceFallback } from '../avatar-mode.mjs';
 
 assert.equal(process.platform, 'win32', 'Run the native voice smoke test on Windows.');
 const base = 'http://127.0.0.1:' + Number(process.env.DEMO_PORT || 4321);
@@ -22,6 +23,7 @@ const title = 'SCFH Voice Check';
 const language = process.env.AGENT_LANGUAGE || 'en';
 const walkthrough = process.argv.includes('--walkthrough');
 const qa = process.argv.includes('--qa');
+const requireAvatar = process.argv.includes('--require-avatar');
 const text = walkthrough ? 'Walk me through a maintenance request from intake to handoff.'
   : qa ? 'A maintenance ticket has no owner. When do I follow up, and who do I tell?'
     : language === 'de' ? 'Klicke im Fenster SCFH Voice Check auf die Schaltfläche.'
@@ -43,6 +45,9 @@ let citedAnswer;
 let incomingTranscript = '';
 let replyTranscript = '';
 
+const avatarFellBack = () => [...room.remoteParticipants.values()].some((participant) =>
+  participant.attributes[avatarModeAttribute] === voiceFallback);
+
 room.registerTextStreamHandler('lk.transcription', async (reader, from) => {
   const part = await reader.readAll();
   if (from.identity === room.localParticipant?.identity) {
@@ -58,7 +63,7 @@ room.registerTextStreamHandler('scfh.onboarding.v1', async (reader) => {
 });
 room.on(RoomEvent.TrackSubscribed, async (track, _publication, participant) => {
   const avatarTrack = Boolean(participant.attributes['lk.publish_on_behalf']);
-  if (avatarEnabled !== avatarTrack) return;
+  if ((avatarEnabled && !avatarFellBack()) !== avatarTrack) return;
   if (avatarTrack && track.kind === TrackKind.KIND_VIDEO) avatarVideo = true;
   if (track.kind !== TrackKind.KIND_AUDIO) return;
   try {
@@ -116,6 +121,7 @@ try {
   await waitFor(() => [...room.remoteParticipants.values()].some((p) => p.attributes['lk.agent.state'] === 'listening'),
     'the LiveKit agent to start listening', avatarEnabled ? 50_000 : 25_000);
   console.log('PASS The menu created a LiveKit room, routed the worker, and accepted a microphone track.');
+  if (requireAvatar) assert(avatarEnabled && !avatarFellBack(), 'The live Beyond Presence avatar was required.');
 
   // Let the Windows input gate settle before requesting real desktop input.
   if (!walkthrough && !qa) await delay(11_500);
@@ -148,7 +154,10 @@ try {
     console.log('PASS The approved spoken answer included the Word citation.');
   } else {
     const controlHeld = () => /\b(control|in use|busy|mouse|keyboard)\b/i.test(replyTranscript);
-    await waitFor(() => existsSync(resultPath) || controlHeld(), 'the native button click or a control handoff', 35_000);
+    const systemPrompt = () => /\b(firewall|security (?:prompt|dialog))\b/i.test(replyTranscript);
+    await waitFor(() => existsSync(resultPath) || controlHeld() || systemPrompt(),
+      'the native button click or a control handoff', 45_000);
+    assert(!systemPrompt() || existsSync(resultPath), 'A Windows security prompt blocked the desktop check.');
     if (!existsSync(resultPath) && controlHeld()) {
       // Retry only the temporary fixture button, in a new turn after the user gate settles.
       console.log('Windows-MCP reported a control handoff. Waiting before retrying the fixture.');
@@ -160,8 +169,10 @@ try {
     console.log('PASS The agent clicked the requested native Windows button and its callback ran.');
   }
   await waitFor(() => outgoingAudio && replyTranscript.trim(), 'spoken confirmation audio', 45_000);
-  if (avatarEnabled) await waitFor(() => avatarVideo, 'Beyond Presence video', 10_000);
-  console.log('PASS The agent returned audible speech' + (avatarEnabled ? ' and Beyond Presence video.' : '.'));
+  const usingAvatar = avatarEnabled && !avatarFellBack();
+  if (usingAvatar) await waitFor(() => avatarVideo, 'Beyond Presence video', 10_000);
+  if (avatarEnabled && !usingAvatar) console.log('PASS The room continued with the configured voice-only fallback.');
+  console.log('PASS The agent returned audible speech' + (usingAvatar ? ' and Beyond Presence video.' : '.'));
 } finally {
   await room.disconnect().catch(() => {});
   await source.close();

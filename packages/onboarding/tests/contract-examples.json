@@ -1,0 +1,26 @@
+{
+  "request": {
+    "valid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "query": "What budget do we have for repairs?"},
+    "invalid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "query": "  "}
+  },
+  "answer": {
+    "valid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "outcome": "insufficient", "text": "The sources do not cover the repair budget.", "claims": [], "citations": []},
+    "invalid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "outcome": "answered", "text": "The repair budget is available.", "claims": [], "citations": []}
+  },
+  "walkthrough": {
+    "valid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "outcome": "insufficient", "text": "The sources do not cover procurement."},
+    "invalid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "outcome": "ready", "workflowId": "maintenance-intake", "title": "Maintenance intake", "steps": [], "citations": []}
+  },
+  "playback": {
+    "valid": {"schemaVersion": 1, "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "runId": "b9337076-1120-4d8f-a3b6-33240341d368", "type": "stepStarted", "stepId": "check-details", "stepIndex": 0},
+    "invalid": {"schemaVersion": 1, "turnId": "2bce98bb-38e5-4da8-a6d8-238ffd2624a2", "runId": "b9337076-1120-4d8f-a3b6-33240341d368", "type": "stepStarted", "stepId": "check-details", "stepIndex": -1}
+  },
+  "citationRequest": {
+    "valid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "passageId": "unassigned-reminder"},
+    "invalid": {"schemaVersion": 1, "requestId": "6d45ca33-92d1-405e-84e9-9c2208f12207", "passageId": "../unassigned-reminder"}
+  },
+  "citation": {
+    "valid": {"schemaVersion": 1, "status": "unavailable"},
+    "invalid": {"schemaVersion": 1, "status": "exact"}
+  }
+}

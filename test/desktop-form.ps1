@@ -1,7 +1,7 @@
 param(
   [Parameter(Mandatory)][string] $Title,
   [Parameter(Mandatory)][string] $ResultFile,
-  [string] $InitialText = ''
+    [string] $InitialText = ''
 )
 
 Add-Type -AssemblyName System.Windows.Forms

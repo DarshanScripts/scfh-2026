@@ -8,20 +8,13 @@ import { createDesktopActionGuard, desktopInstructions } from './desktop-harness
 import { createWorkflowTools } from './workflow-tools.mjs';
 import { listenForAvatarAudio } from './workflow-playback.mjs';
 import { createOnboardingAnswers } from './onboarding-answer.mjs';
+import { avatarModeAttribute, voiceFallback } from './avatar-mode.mjs';
 
 const workerName = process.env.LIVEKIT_AGENT_NAME?.trim() || 'handbook-windows';
 const language = process.env.AGENT_LANGUAGE || 'en';
 const avatarEnabled = process.env.ENABLE_AVATAR === '1';
 const cartesiaModel = process.env.CARTESIA_TTS_MODEL?.trim() || 'sonic-3.6';
 const cartesiaVoice = process.env.CARTESIA_VOICE_ID?.trim() || '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc';
-
-function required(...names) {
-  for (const name of names) {
-    const value = process.env[name]?.trim();
-    if (value) return value;
-  }
-  throw new Error('Set ' + names.join(' or ') + ' in .env before starting the worker.');
-}
 
 export default defineAgent({
   entry: async (ctx) => {
@@ -80,14 +73,27 @@ export default defineAgent({
 
     await ctx.connect();
     if (avatarEnabled) {
-      const avatar = new AvatarSession({
-        apiKey: required('BEYOND_PRESENCE_API_KEY', 'BEY_API_KEY'),
-        avatarId: process.env.BEY_AVATAR_ID || process.env.BEYOND_PRESENCE_AVATAR_ID,
-      });
-      ctx.addShutdownCallback(() => avatar.aclose());
-      avatarAudio = listenForAvatarAudio(ctx.room, avatar.avatarIdentity);
-      ctx.addShutdownCallback(() => avatarAudio.close());
-      await avatar.start(session, ctx.room);
+      // A future Anam adapter belongs here and can publish to the same room.
+      const apiKey = process.env.BEYOND_PRESENCE_API_KEY?.trim() || process.env.BEY_API_KEY?.trim();
+      let avatar;
+      try {
+        if (!apiKey) throw new Error('Beyond Presence key is missing.');
+        avatar = new AvatarSession({
+          apiKey,
+          avatarId: process.env.BEY_AVATAR_ID || process.env.BEYOND_PRESENCE_AVATAR_ID,
+          connOptions: { maxRetry: 2, retryIntervalMs: 1_000, timeoutMs: 6_000 },
+        });
+        await avatar.start(session, ctx.room);
+      } catch {
+        await avatar?.aclose().catch(() => {});
+        avatar = undefined;
+        console.warn('Beyond Presence did not start. Continuing with voice only.');
+        await ctx.room.localParticipant.setAttributes({ [avatarModeAttribute]: voiceFallback });
+      }
+      if (avatar) {
+        avatarAudio = listenForAvatarAudio(ctx.room, avatar.avatarIdentity);
+        ctx.addShutdownCallback(() => avatarAudio.close());
+      }
     }
     await session.start({
       agent,
@@ -99,7 +105,7 @@ export default defineAgent({
           activeSession.generateReply({ userInput: event.text });
         },
       },
-      ...(avatarEnabled && { outputOptions: { audioEnabled: false } }),
+      ...(avatarAudio && { outputOptions: { audioEnabled: false } }),
     });
   },
 });

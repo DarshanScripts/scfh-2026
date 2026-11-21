@@ -8,8 +8,8 @@ from pydantic import TypeAdapter
 
 from .contracts import Answer, CitationRequest, CitationResult, Playback, Request, WalkthroughResult
 
-SCHEMAS = {
-    name: TypeAdapter(contract).json_schema()
+ADAPTERS = {
+    name: TypeAdapter(contract)
     for name, contract in {
         "request": Request,
         "answer": Answer,
@@ -19,6 +19,7 @@ SCHEMAS = {
         "citation": CitationResult,
     }.items()
 }
+SCHEMAS = {name: adapter.json_schema() for name, adapter in ADAPTERS.items()}
 
 
 def main() -> None:

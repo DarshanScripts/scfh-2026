@@ -1,5 +1,7 @@
 # Challenge 2 — The Memory of Public Administration
 
+The Windows release uses Rough.js for the narrated workflow. See the [release checks](docs/windows-acceptance.md) for the current implementation and acceptance results.
+
 ## Scope and team ownership
 
 Build an English-language Windows demo for a fictional **Municipal Facilities Service Desk**. The **Beyond Presence digital avatar** is the interface employees speak to and see. Reuse the existing voice pipeline for speech and the existing Windows computer-use integration for browser and File Explorer actions. Show answers, clickable citations, and a floating Excalidraw canvas beside the avatar.
@@ -11,7 +13,7 @@ Cover two tasks, **logging a routine maintenance request** and **handing over an
 | **Member 1 · Windows** | Audit and run the existing app locally. Publish the working baseline to GitHub. Integrate the portable code with tool dispatch, the Beyond Presence avatar, the source viewer, and the Excalidraw MCP App. Run Windows acceptance and own every merge to `main`. |
 | **Member 2 · Arch Linux / KDE Plasma** | Build the shared contracts, synthetic corpus, handover review records, retrieval, citation previews, and workflow scene and export helpers. Verify them in a local browser and test harness with simulated speech events. |
 
-The Windows app source is still with Member 1. Member 2 can begin with the contracts and fixtures below. Member 1’s local audit supplies the real entry points, supported runtime versions, and UI hooks.
+The Windows app and portable onboarding package are now in this repository. The [README](README.md) lists the current runtime versions and demo commands.
 
 ## Shared contracts and safety
 

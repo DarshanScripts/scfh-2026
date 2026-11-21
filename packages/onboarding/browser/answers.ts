@@ -55,7 +55,12 @@ window.addEventListener('message', ({ origin, source, data }) => {
     button.className = 'citation';
     button.dataset.passage = passage.passageId;
     const page = passage.locator.pageLabel ?? (passage.locator.format === 'pdf' ? passage.locator.page : undefined);
-    button.textContent = [passage.title, passage.sectionPath.join(' › '), page ? `p. ${page}` : ''].filter(Boolean).join(' · ');
+    const label = document.createElement('span');
+    label.textContent = [passage.title, passage.sectionPath.join(' › '), page ? `p. ${page}` : ''].filter(Boolean).join(' · ');
+    const excerpt = document.createElement('small');
+    excerpt.className = 'citation-excerpt';
+    excerpt.textContent = passage.quote;
+    button.append(label, excerpt);
     button.title = passage.quote;
     button.onclick = () => void openCitation(result.requestId, passage);
     citations.append(button);

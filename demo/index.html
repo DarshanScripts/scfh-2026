@@ -3,92 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Voice Agent</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { margin: 0; overflow: hidden; user-select: none; }
-    main {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: radial-gradient(circle at 38% 22%, #497a77, #192d35 68%);
-      box-shadow: inset 0 0 0 1px #8bbaa9;
-      app-region: drag;
-    }
-    main[data-state="connecting"] { background: #5b4323; box-shadow: inset 0 0 0 1px #e1b168; }
-    main[data-state="listening"] { background: #215344; box-shadow: inset 0 0 0 1px #80d7af; }
-    main[data-state="thinking"] { background: #35476a; box-shadow: inset 0 0 0 1px #9aabdf; }
-    main[data-state="speaking"] { background: #49396c; box-shadow: inset 0 0 0 1px #c2adfa; }
-    main[data-state="error"] { background: #5a303e; box-shadow: inset 0 0 0 1px #e6a1af; }
-    button {
-      width: 62px;
-      height: 62px;
-      display: grid;
-      place-items: center;
-      padding: 0;
-      border: 1px solid #ffffff40;
-      border-radius: 50%;
-      background: #132527;
-      color: #e0fff1;
-      cursor: pointer;
-      app-region: no-drag;
-    }
-    button:hover { background: #203a3b; }
-    button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .mic {
-      position: relative;
-      width: 10px;
-      height: 18px;
-      margin-bottom: 6px;
-      border-radius: 8px;
-      background: currentColor;
-    }
-    .mic::before {
-      content: "";
-      position: absolute;
-      inset: 7px -5px -5px;
-      border: 2px solid currentColor;
-      border-top: 0;
-      border-radius: 0 0 10px 10px;
-    }
-    .mic::after {
-      content: "";
-      position: absolute;
-      bottom: -9px;
-      left: 4px;
-      width: 2px;
-      height: 5px;
-      background: currentColor;
-    }
-    .stop { width: 16px; height: 16px; border-radius: 3px; background: currentColor; }
-    #avatar {
-      position: absolute;
-      inset: 3px;
-      width: calc(100% - 6px);
-      height: calc(100% - 6px);
-      object-fit: cover;
-      border-radius: 50%;
-      pointer-events: none;
-    }
-    main[data-avatar] button { z-index: 1; align-self: end; width: 28px; height: 28px; margin-bottom: 5px; }
-    main[data-avatar] .stop { width: 10px; height: 10px; }
-    button[aria-label="End call"] .mic, button[aria-label="Call voice agent"] .stop { display: none; }
-    #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  </style>
+  <title>Facilities Voice</title>
+  <link rel="stylesheet" href="/orb.css">
   <script defer src="/livekit.js"></script>
   <script defer src="/orb.js"></script>
 </head>
 <body>
-  <main data-state="idle">
-    <video id="avatar" autoplay muted playsinline hidden aria-label="Voice agent avatar"></video>
-    <button id="voice-toggle" type="button" aria-label="Call voice agent" title="Call voice agent">
-      <span class="mic" aria-hidden="true"></span>
-      <span class="stop" aria-hidden="true"></span>
-    </button>
-    <p id="status" role="status">Ready to call.</p>
-  </main>
+  <div id="root"></div>
 </body>
 </html>

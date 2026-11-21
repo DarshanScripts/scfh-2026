@@ -1,18 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { _electron } from 'playwright-core';
+import { loadOrbAssets } from '../orb-assets.mjs';
 
 async function withOrb(run, { sdk, callResponse } = {}) {
   const root = new URL('../', import.meta.url);
-  const assets = new Map(await Promise.all([
-    ['/', 'text/html; charset=utf-8', 'demo/index.html'],
-    ['/orb.js', 'text/javascript; charset=utf-8', 'demo/orb.js'],
-    ['/livekit.js', 'text/javascript; charset=utf-8', 'node_modules/livekit-client/dist/livekit-client.umd.js'],
-  ].map(async ([route, type, file]) => [route, [type, await readFile(new URL(file, root))]])));
+  const assets = await loadOrbAssets();
   if (sdk) assets.get('/livekit.js')[1] = sdk;
   const connect = Promise.withResolvers();
   const fixture = createServer((request, response) => {
@@ -63,7 +59,10 @@ test('the desktop orb stays on top and its single button cancels a pending call'
       assert.deepEqual(await app.evaluate(({ BrowserWindow }) => {
         const orb = BrowserWindow.getAllWindows()[0];
         return [orb.isAlwaysOnTop(), ...orb.getContentSize()];
-      }), [true, 160, 160]);
+      }), [true, 184, 184]);
+      if (process.env.SCFH_CAPTURE_ORB === '1') {
+        await page.screenshot({ path: 'docs/desktop-orb.png', omitBackground: true, scale: 'css' });
+      }
       await call.click();
       await Promise.race([connect, new Promise((_, reject) => {
         timer = setTimeout(() => reject(new Error('Microphone capture did not reach the call endpoint.')), 5_000);
@@ -147,6 +146,10 @@ const simulatedLiveKit = `
           presenter.trackPublications.delete(kind);
         }
       }
+      fallBackToVoice() {
+        this.remoteParticipants.get('agent').attributes['scfh.avatar.mode'] = 'voice-fallback';
+        this.events.get('attributes')?.();
+      }
     },
   };
 `;
@@ -169,14 +172,30 @@ for (const avatarEnabled of [false, true]) {
         [avatarEnabled ? 'avatar' : 'agent']);
       if (avatarEnabled) {
         await page.evaluate(() => window.testRoom.unpublishAvatar());
-        assert.equal(await video.isHidden(), true);
+        await video.waitFor({ state: 'hidden', timeout: 5_000 });
         assert.equal(await page.locator('audio').count(), 0);
         await page.evaluate(() => window.testRoom.publishAvatar());
         await video.waitFor({ timeout: 5_000 });
       }
       await page.getByRole('button', { name: 'End call', exact: true }).click();
-      assert.equal(await video.isHidden(), true);
+      await video.waitFor({ state: 'hidden', timeout: 5_000 });
       assert.equal(await page.locator('audio').count(), 0);
     }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled } });
   });
 }
+
+test('an unavailable avatar keeps the call open and plays the assigned agent audio', async () => {
+  await withOrb(async ({ page }) => {
+    await page.getByRole('button', { name: 'Call voice agent' }).click();
+    await page.getByText('Waiting for the avatar…').waitFor({ state: 'attached', timeout: 5_000 });
+    await page.evaluate(() => {
+      window.testRoom.fallBackToVoice();
+      window.testRoom.publishAvatar();
+    });
+    await page.getByText('Voice only', { exact: true }).waitFor({ timeout: 5_000 });
+    assert.equal(await page.locator('#avatar').isHidden(), true);
+    assert.deepEqual(await page.locator('audio').evaluateAll((nodes) => nodes.map((node) => node.dataset.owner)), ['agent']);
+    assert.equal(await page.getByRole('status').textContent(), 'Avatar unavailable. Listening. Say a command.');
+    await page.getByRole('button', { name: 'End call' }).click();
+  }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: true } });
+});

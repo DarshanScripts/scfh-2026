@@ -25,6 +25,7 @@ const run = Date.now().toString(36);
 const browserTitle = 'SCFH browser check ' + run;
 const formTitle = 'SCFH native check ' + run;
 const checkPublicSite = process.argv.includes('--public');
+const hasControlOverlay = !process.argv.includes('--no-control');
 let clicked = false;
 let visited = false;
 let homeLoaded = false;
@@ -49,7 +50,8 @@ const site = createServer((request, response) => {
 
 initializeLogger({ level: 'error' });
 const mcp = createDesktopServer(({ result }) => result.content, {
-  control: !process.argv.includes('--no-control'),
+  control: hasControlOverlay,
+  config: resolve('windows-mcp.toml'),
 });
 const apps = [];
 let tools;
@@ -114,9 +116,11 @@ async function checkCursorTravel(name, loc, act, {
     stdio: ['ignore', 'pipe', 'inherit'],
   });
   const samples = [];
+  const overlay = new Set();
   const lines = createInterface({ input: probe.stdout });
   lines.on('line', (line) => {
     if (/^\d+ -?\d+ -?\d+$/.test(line)) samples.push(line.split(' ').map(Number));
+    if (line.startsWith('overlay ')) overlay.add(line.slice(8));
   });
   const at = ([, x, y], [targetX, targetY]) => x === targetX && y === targetY;
   try {
@@ -128,6 +132,10 @@ async function checkCursorTravel(name, loc, act, {
     assert(distinct.size >= 5, name + ' should pass through at least five visible intermediate positions.');
     const duration = arrival[0] - intermediate[0][0];
     assert(duration >= minimumMs, name + ' should travel visibly before acting.');
+    if (hasControlOverlay) {
+      assert([...overlay].some((layer) => /_(top|bottom|left|right)_/.test(layer)), 'Expected the Windows control border.');
+      assert(![...overlay].some((layer) => layer.includes('_notice_')), 'The desktop control banner should be hidden.');
+    }
     const distance = Math.round(Math.hypot(loc[0] - start[0], loc[1] - start[1]));
     console.log('PASS ' + name + ' traveled ' + distance + ' px through ' + distinct.size +
       ' sampled positions over ' + duration + ' ms.');

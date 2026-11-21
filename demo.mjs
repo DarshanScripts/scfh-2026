@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { AccessToken, RoomAgentDispatch, RoomConfiguration, RoomServiceClient } from 'livekit-server-sdk';
 import { anthropicSettings } from './anthropic.mjs';
 import { answerPanelPolicy, proxyOnboarding, startOnboardingService } from './onboarding-service.mjs';
+import { loadOrbAssets } from './orb-assets.mjs';
 
 const host = '127.0.0.1';
 const menuPort = Number(process.env.DEMO_PORT || 4321);
@@ -22,10 +23,6 @@ const agentName = `scfh-desktop-demo-${randomUUID()}`;
 
 anthropicSettings();
 
-if (avatarEnabled && !(process.env.BEYOND_PRESENCE_API_KEY?.trim() || process.env.BEY_API_KEY?.trim())) {
-  throw new Error('Set BEYOND_PRESENCE_API_KEY in .env to enable the avatar.');
-}
-
 if (!livekitURL || !key || !secret) {
   throw new Error('Set LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET in .env for LiveKit Inference.');
 }
@@ -36,6 +33,10 @@ try {
   throw new Error('Could not authenticate the LiveKit Cloud project' + status + '. Check the LiveKit settings in .env.');
 }
 
+const [orbAssets, answers] = await Promise.all([
+  loadOrbAssets(),
+  readFile(new URL('./demo/answers.html', import.meta.url)),
+]);
 const onboarding = await startOnboardingService().catch((error) => {
   console.warn('Onboarding unavailable. See the onboarding setup in README.md.', error.message);
 });
@@ -49,13 +50,6 @@ const workerEnv = {
   SCFH_WORKER_HEALTH_PORT: String(healthPort),
   ONBOARDING_SERVICE_URL: onboarding?.url || '',
 };
-const [html, script, sdk, answers] = await Promise.all([
-  readFile(new URL('./demo/index.html', import.meta.url)),
-  readFile(new URL('./demo/orb.js', import.meta.url)),
-  readFile(new URL('./node_modules/livekit-client/dist/livekit-client.umd.js', import.meta.url)),
-  readFile(new URL('./demo/answers.html', import.meta.url)),
-]);
-
 const menu = createServer(async (request, response) => {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Permissions-Policy', 'microphone=(self), camera=()');
@@ -63,9 +57,8 @@ const menu = createServer(async (request, response) => {
     "default-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; connect-src 'self' https: wss: ws://127.0.0.1:*");
   if (request.headers.host !== host + ':' + menuPort) return response.writeHead(403).end();
   if (request.method === 'GET') {
-    if (request.url === '/') return response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(html);
-    if (request.url === '/orb.js') return response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(script);
-    if (request.url === '/livekit.js') return response.writeHead(200, { 'Content-Type': 'text/javascript' }).end(sdk);
+    const asset = orbAssets.get(request.url);
+    if (asset) return response.writeHead(200, { 'Content-Type': asset[0] }).end(asset[1]);
     if (request.url === '/answers') {
       response.setHeader('Content-Security-Policy', answerPanelPolicy);
       return response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(answers);

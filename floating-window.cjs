@@ -19,7 +19,7 @@ function circleRegion(diameter) {
 
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
-  const diameter = 160;
+  const diameter = 184;
   const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
   const window = voiceWindow = new BrowserWindow({
     x: area.x + Math.max(0, area.width - diameter - 24),

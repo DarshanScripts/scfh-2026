@@ -1,10 +1,10 @@
-"""Add eased pointer movement to the pinned Windows-MCP desktop driver."""
+"""Customize pointer movement and the control indicator in Windows-MCP 0.8.9."""
 
 from math import ceil, hypot
 from time import perf_counter, sleep
 
 from windows_mcp import uia
-from windows_mcp.desktop import service
+from windows_mcp.desktop import control_overlay, service
 from windows_mcp.desktop.control import get_controller
 from windows_mcp.__main__ import main
 
@@ -62,4 +62,7 @@ class SmoothDesktop(service.Desktop):
 if __name__ == "__main__":
     # The pinned CLI imports Desktop when it initializes its runtime.
     service.Desktop = SmoothDesktop
+    # The pinned renderer treats a missing notice bitmap as border and cursor only.
+    # Leave the control overlay lifecycle and physical takeover intact.
+    control_overlay._notice_bitmap = lambda _width: None
     main()
