@@ -23,9 +23,9 @@ The €105 million figure is a preliminary project estimate, not a claim of blan
 
 Say HBG as “H B G” if transcription needs help. Keep the second question short. The German source gives separate reasons: for KV, MCON said the city was ineligible, named HBG as a possible private applicant and reported the programme had no funds at the time. For SGFFG, it identified HBG as the operator and said it could not show the required own contribution. EFRE is a separate option with funds already committed, and it is covered in the first prompt. Avoid a general claim that municipalities can never apply for harbour grants.
 
-## Windows setup for Member 1
+## Run the Harbour demo on Windows
 
-1. Start with `git fetch origin feat/hildesheim-harbour` and review `git log main..origin/feat/hildesheim-harbour --oneline`. Merge the feature branch into your integration branch, then follow the root [README](../README.md) for Node, uv, and browser bundle setup.
+1. Follow the root [README](../README.md#run-on-windows) for Node, uv, and browser bundle setup.
 2. Obtain the exact 938-page source file `00_haushaltsplan_2026_2027_gesamt.pdf` from the team workspace. Its SHA-256 is `78e8d0f836df424ba14ad710319bc977d4d2953855ae7960b588f9afb5efc0b3`. From `packages/onboarding`, run:
 
    ```powershell

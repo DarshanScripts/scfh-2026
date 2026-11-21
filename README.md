@@ -1,12 +1,24 @@
-# Facilities Voice Agent
+# Relay
 
-A Windows voice sidebar for a fictional municipal Facilities Service Desk. Ask an onboarding question, open its PDF or Word source inline, follow a narrated workflow, or ask the assistant to use the desktop.
+**A voice workspace for municipal handovers.** Relay helps a new colleague understand an inherited project, verify the answer against the original documents, and turn that evidence into a next action.
 
-![Electron voice sidebar with call controls and conversation](docs/desktop-sidebar.png)
+[Watch the demo (2:28 · 60 fps)](https://github.com/DarshanScripts/scfh-2026/releases/download/harbour-demo/demo_60fps.mp4) · [Run on Windows](#run-on-windows) · [Harbour demo guide](docs/hildesheim-harbour-demo.md)
+
+[![Relay’s live Harbour funding walkthrough, with an animated Canvas on the left and the avatar and cited transcript on the right](docs/relay-live-walkthrough.png)](https://github.com/DarshanScripts/scfh-2026/releases/download/harbour-demo/demo_60fps.mp4)
+
+## A handover in three steps
+
+1. **Ask.** “Walk me through the funding stage of the Hildesheim Harbour project.” Relay reveals the funding routes as it explains them aloud.
+2. **Verify.** “Why can’t the city apply directly?” Open a citation in the transcript to read the highlighted passage in the original budget.
+3. **Act.** Ask Relay to open the handover register or save a brief on the desktop. The recording shows the desktop handoff stopping when the operator takes back control.
+
+<img src="docs/relay-live-citation.png" alt="Live Relay sidebar with a cited Harbour answer and a highlighted paragraph from the original budget PDF" width="420">
+
+The Harbour demo uses published city documents and a clearly labelled simulated handover workspace. Relay says when the available sources do not support an answer.
 
 ## Run on Windows
 
-Install Node.js 22.22+, Python 3.12+, and [uv](https://docs.astral.sh/uv/getting-started/installation/). Run these commands in PowerShell from the repository root.
+Install Node.js 22.22+, Python 3.12+, and [uv](https://docs.astral.sh/uv/getting-started/installation/). From the repository root in PowerShell, run:
 
 ```powershell
 npm.cmd ci
@@ -18,43 +30,17 @@ npx.cmd --yes bun@1.4.5 run build
 Pop-Location
 ```
 
-Set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `ANTHROPIC_API_KEY` in `.env`. Use `LLM_MODEL` to select Claude and `REASONING_EFFORT=none` for the quickest replies. For video, set `ENABLE_AVATAR=1` and `BEYOND_PRESENCE_API_KEY`. The call switches to voice if the provider cannot start. Anam is reserved for a future video adapter.
+1. Add `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `ANTHROPIC_API_KEY` to `.env`. The bundled Facilities sample is ready to try with these settings. For the Harbour sources and retrieval setup, follow the [Harbour demo guide](docs/hildesheim-harbour-demo.md#run-the-harbour-demo-on-windows).
+2. On an unlocked desktop, run `./start.cmd` and select **Start call**. Wait for **Listening**. Try “What do I need before I open a maintenance ticket?” in Facilities mode.
+3. Use `./restart.cmd` after changing settings and `./stop.cmd` to stop the app. Startup logs are in `.hcu/`.
 
-Run `./start.cmd` on an unlocked desktop. The Electron sidebar opens on the right. Select **Start call** and wait for **Listening**, then **End call** to finish. You can use **Collapse sidebar** to keep the call running in a small edge tab. A walkthrough opens **Canvas** on the left 50% of the screen and keeps the avatar and transcript on the right 30%. During desktop control, both windows step aside. The sidebar returns with the last request and reply. The target app keeps focus, and **Show canvas** brings back the drawing when you want it. Use `./restart.cmd` to reload a running app. Use `./stop.cmd` to close it. Startup logs are in `.hcu/`.
+English and German transcription are enabled by default. Set `LIVEKIT_VOICE_ID=Enceladus` for Gemini speech through LiveKit. For video, set `ENABLE_AVATAR=1` and `BEYOND_PRESENCE_API_KEY` and optionally choose an avatar with `BEYOND_PRESENCE_AVATAR_ID`. The call continues with voice if video is unavailable.
 
-## Try the demo
+During desktop control, the border shows that Relay is active. Press **Ctrl+Alt+Shift+Backspace** to take over. During a walkthrough, speak or close Canvas to interrupt it.
 
-The [use-case rehearsal guide](docs/demo-rehearsal.md) walks through a first maintenance request, a shift handoff, a workload briefing, and desktop navigation.
+## Project guides
 
-| Say | Check |
-| --- | --- |
-| “Open the Facilities onboarding folder.” | The assistant opens the sample guides in File Explorer. |
-| “Open example.com in a new Chrome tab.” | The new tab opens and existing tabs stay available. |
-| “What do I need before I open a maintenance ticket?” | The answer cites **Intake checklist**. Open the citation to highlight the PDF on page 2. |
-| “A ticket has no owner. When do I follow up, and who do I tell?” | The Word citation highlights the reminder under **Unassigned tickets**. |
-| “Which open ticket is due first, and who owns it?” | The answer cites **Current queue** for `FM-104` and the Desk Lead. |
-| “Which ticket is due first, and what budget do we have for repairs?” | The answer cites the deadline and says the sources lack budget information. |
-| “Walk me through a maintenance request from intake to handoff.” | The canvas reveals seven steps as they are spoken. Select **Save as PNG** to export the whole diagram. |
-| “Draw a bar chart with 12 requests in January, 18 in February, and 15 in March.” | The canvas draws the chart from your values. |
-
-The blue screen border marks active desktop control. Press **Ctrl+Alt+Shift+Backspace** to take over. To interrupt a walkthrough, speak or close its canvas.
-
-![Cited answer and highlighted reminder in the Shift Handoff Guide](docs/onboarding-citation.png)
-
-![Rough.js canvas showing the maintenance intake workflow and PNG export](docs/workflow-canvas.png)
-
-## Verify
-
-```powershell
-node --test --test-timeout=60000 test/*.test.mjs
-npm.cmd run test:desktop:windows -- --public
-npm.cmd run test:voice
-npm.cmd run test:voice -- --qa
-npm.cmd run test:voice -- --walkthrough
-```
-
-Start the app before the voice tests. Add `--require-avatar` to require live video. See the [release checks](docs/windows-acceptance.md) and the [portable onboarding package](packages/onboarding/README.md) for its Linux harness and optional Qdrant mode.
-
-## Hildesheim Harbour demo
-
-Use the separate Harbour corpus to explore the city's budget and council evidence for harbour expansion and renovation. Member 1’s agent should start with the [Windows integration handoff](docs/harbour-start-here.md). See the [three-prompt jury run and Windows setup](docs/hildesheim-harbour-demo.md) and [corpus notes](packages/onboarding/harbour-corpus/README.md).
+- [Demo rehearsal](docs/demo-rehearsal.md) for the Facilities scenarios.
+- [Windows acceptance checks](docs/windows-acceptance.md) for the voice, Canvas, and desktop tests.
+- [Onboarding package](packages/onboarding/README.md) for the portable retrieval and browser harness.
+- [Harbour corpus](packages/onboarding/harbour-corpus/README.md) for source provenance and indexing.
