@@ -194,6 +194,12 @@ test('the avatar and canvas stay side by side and yield the desktop during compu
     const canvas = await opened;
     assert(await avatar.isVisible());
     assert(await page.getByRole('log').isVisible());
+    const scene = canvas.locator('svg');
+    const initialView = await scene.getAttribute('viewBox');
+    await canvas.getByRole('button', { name: 'Zoom in' }).click();
+    assert.notEqual(await scene.getAttribute('viewBox'), initialView);
+    await canvas.getByRole('button', { name: 'Zoom out' }).click();
+    await canvas.getByRole('button', { name: 'Follow steps' }).click();
     const layout = await app.evaluate(({ BrowserWindow, screen }) => {
       const windows = BrowserWindow.getAllWindows();
       const sidebar = windows.find(win => win.getTitle() === 'Voice workspace').getBounds();
@@ -209,10 +215,13 @@ test('the avatar and canvas stay side by side and yield the desktop during compu
       { kind: 'symbol', x: 130, y: 140, name: 'document', size: 36, group: 'source' },
       { kind: 'label', x: 180, y: 140, text: 'Source', group: 'source' },
     ] }), 'ok');
+    const followedWidth = Number((await scene.getAttribute('viewBox')).split(' ')[2]);
+    assert(followedWidth < 600, 'The camera frames the narrated step instead of showing the entire drawing area');
     assert.equal(await send('agent', { type: 'completed', id: begin.id }), 'ok');
     await canvas.getByRole('button', { name: 'Save as PNG' }).waitFor();
     await canvas.getByText('Check the source.').waitFor();
     assert.equal(await canvas.locator('[data-symbol="document"]').count(), 1);
+    const fitted = await scene.getAttribute('viewBox');
     await canvas.getByRole('button', { name: 'Zoom in' }).click();
     const zoomed = await canvas.locator('svg').getAttribute('viewBox');
     assert.notEqual(zoomed, '0 0 1000 600');
@@ -223,7 +232,8 @@ test('the avatar and canvas stay side by side and yield the desktop during compu
     await canvas.mouse.up();
     assert.notEqual(await canvas.locator('svg').getAttribute('viewBox'), zoomed);
     await canvas.getByRole('button', { name: 'Fit view' }).click();
-    assert.equal(await canvas.locator('svg').getAttribute('viewBox'), '0 0 1000 600');
+    const fittedAgain = (await scene.getAttribute('viewBox')).split(' ').map(Number);
+    assert(fitted.split(' ').map(Number).every((value, index) => Math.abs(value - fittedAgain[index]) < 0.1));
     const desktopStart = { type: 'start', id: '55a8d92a-9f8c-4c99-8097-c271b637ced1', request: 'Open the Facilities onboarding folder.' };
     assert.equal(await desktop(desktopStart, 'unrelated-participant'), 'invalid');
     assert.equal(await desktop(desktopStart), 'ok');

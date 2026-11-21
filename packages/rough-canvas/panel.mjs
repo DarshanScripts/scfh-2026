@@ -1,5 +1,5 @@
 import { createCanvas, validateStep } from './canvas.mjs';
-import { MAX_STEPS, WIDTH } from './contract.mjs';
+import { MAX_STEPS } from './contract.mjs';
 
 const runId = /^[A-Za-z0-9_-]{1,80}$/u;
 
@@ -12,14 +12,13 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
       <h2></h2>
       <button type="button" aria-label="Close canvas" title="Close canvas">×</button>
     </header>
-    <div class="rough-lesson-paper">
-      <svg viewBox="0 0 1000 600" role="img"><g></g></svg>
-      <div class="rough-view-controls" role="group" aria-label="Canvas view" hidden>
-        <button type="button" data-zoom="out" aria-label="Zoom out">−</button>
-        <button type="button" data-zoom="in" aria-label="Zoom in">+</button>
-        <button type="button" data-zoom="fit">Fit view</button>
-      </div>
+    <div class="rough-view-controls" role="group" aria-label="Canvas view">
+      <button type="button" data-zoom="out" aria-label="Zoom out" title="Zoom out">−</button>
+      <button type="button" data-zoom="in" aria-label="Zoom in" title="Zoom in">+</button>
+      <button type="button" data-zoom="fit">Fit view</button>
+      <button type="button" data-zoom="follow" hidden>Follow steps</button>
     </div>
+    <div class="rough-lesson-paper"><svg viewBox="0 0 1000 600" role="img"><g></g></svg></div>
     <footer aria-live="polite">
       <strong></strong>
       <p></p>
@@ -34,19 +33,28 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
   const caption = panel.querySelector('p');
   const button = panel.querySelector('[aria-label="Close canvas"]');
   const view = panel.querySelector('.rough-view-controls');
-  view.querySelector('[data-zoom="out"]').onclick = () => canvas.zoom(1 / 1.3);
-  view.querySelector('[data-zoom="in"]').onclick = () => canvas.zoom(1.3);
-  view.querySelector('[data-zoom="fit"]').onclick = () => canvas.fit();
+  const follow = view.querySelector('[data-zoom="follow"]');
+  function useManualView(change) {
+    change();
+    if (run && !run.terminal) follow.hidden = false;
+  }
+  view.querySelector('[data-zoom="out"]').onclick = () => useManualView(() => canvas.zoom(1 / 1.3));
+  view.querySelector('[data-zoom="in"]').onclick = () => useManualView(() => canvas.zoom(1.3));
+  view.querySelector('[data-zoom="fit"]').onclick = () => useManualView(canvas.fit);
+  follow.onclick = () => {
+    canvas.follow();
+    follow.hidden = true;
+  };
   let drag;
   scene.addEventListener('pointerdown', (event) => {
-    if (view.hidden || event.button !== 0 || scene.viewBox.baseVal.width >= WIDTH) return;
+    if (event.button !== 0 || !scene.querySelector('[data-step]')) return;
     drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
     scene.setPointerCapture(drag.id);
   });
   scene.addEventListener('pointermove', (event) => {
     if (drag?.id !== event.pointerId) return;
     const scale = scene.getScreenCTM().a;
-    canvas.pan((drag.x - event.clientX) / scale, (drag.y - event.clientY) / scale);
+    useManualView(() => canvas.pan((drag.x - event.clientX) / scale, (drag.y - event.clientY) / scale));
     drag.x = event.clientX;
     drag.y = event.clientY;
   });
@@ -61,7 +69,7 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
     run?.animation?.abort();
     run = undefined;
     canvas.reset();
-    view.hidden = true;
+    follow.hidden = true;
     panel.hidden = true;
   }
 
@@ -111,6 +119,8 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
         } catch {
           if (animation.signal.aborted) return 'closed';
           current.terminal = true;
+          follow.hidden = true;
+          await canvas.complete();
           progress.textContent = 'Drawing stopped';
           return 'failed';
         } finally {
@@ -121,15 +131,24 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
       if (message.type === 'completed' && current.next === current.total) {
         current.terminal = true;
         progress.textContent = 'Complete · ' + current.total + ' steps';
-        view.hidden = false;
-        return 'ok';
+        follow.hidden = true;
+        const animation = current.animation = new AbortController();
+        try {
+          await canvas.complete(animation.signal);
+          return run === current ? 'ok' : 'closed';
+        } catch {
+          return animation.signal.aborted ? 'closed' : 'failed';
+        } finally {
+          current.animation = undefined;
+        }
       }
 
       if (message.type === 'paused' || message.type === 'failed') {
         current.terminal = true;
         current.animation?.abort();
         progress.textContent = message.type === 'paused' ? 'Drawing paused' : 'Drawing stopped';
-        view.hidden = false;
+        follow.hidden = true;
+        await canvas.complete();
         return 'ok';
       }
 

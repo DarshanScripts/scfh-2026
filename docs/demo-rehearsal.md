@@ -10,7 +10,7 @@ From the repository root, run `./start.cmd`. If the app was already open when yo
 | --- | --- |
 | “What do I need before I open a maintenance ticket?” | A spoken answer and an **Intake checklist** citation in the transcript. Open it to see the exact passage highlighted on page 2. |
 | “Walk me through a maintenance request from intake to handoff.” | The canvas opens on the left half of the screen. The avatar and conversation stay visible on the right. Seven approved steps appear with the narration. The citation remains in the conversation. |
-| Zoom in, drag to inspect a branch, then select **Fit view** and **Save as PNG**. | You can inspect the diagram after narration. The exported image includes the complete workflow. |
+| Try **+** and **−** during a step, then select **Follow steps**. After the narration, try **Fit view** and **Save as PNG**. | The camera moves to each new step. Zooming or dragging pauses camera tracking until you select **Follow steps**. The completed diagram fits the window and the PNG includes the whole drawing. |
 
 For a second run, speak while a step is being narrated to interrupt it. Ask for the same walkthrough to start it again. You can also say “Close the workflow canvas.”
 

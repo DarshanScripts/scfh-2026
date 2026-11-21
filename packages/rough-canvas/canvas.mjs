@@ -142,9 +142,50 @@ export function createCanvas(scene, layer) {
   const positions = new Map();
   const connectors = new WeakMap();
   let focusedGroup;
+  let cameraAnimation;
+  let manualView = false;
+  let scriptedView = false;
+  let currentStep;
   const offset = (group) => positions.get(group) ?? zero;
   const setView = ({ x, y, width, height }) => scene.setAttribute('viewBox', [x, y, width, height].join(' '));
   const groupMembers = (id) => [...layer.querySelectorAll('[data-group="' + id + '"]')];
+  const aspect = () => scene.clientWidth && scene.clientHeight ? scene.clientWidth / scene.clientHeight : WIDTH / HEIGHT;
+
+  function frame({ x, y, width, height }, maxZoom = 2.4, padding = 30) {
+    const ratio = aspect();
+    const worldWidth = Math.max(WIDTH, HEIGHT * ratio);
+    const viewWidth = Math.max(width + padding * 2, (height + padding * 2) * ratio, worldWidth / maxZoom);
+    const viewHeight = viewWidth / ratio;
+    return { x: x + (width - viewWidth) / 2, y: y + (height - viewHeight) / 2, width: viewWidth, height: viewHeight };
+  }
+
+  function contentFrame() {
+    return layer.childElementCount ? frame(layer.getBBox(), 2.2) : frame(overview, 1, 0);
+  }
+
+  function stopFollowing() {
+    manualView = true;
+    focusedGroup = undefined;
+    cameraAnimation?.abort();
+  }
+
+  async function animateView(target, signal) {
+    cameraAnimation?.abort();
+    const animation = cameraAnimation = new AbortController();
+    const { x, y, width, height } = scene.viewBox.baseVal;
+    try {
+      await tween(520, AbortSignal.any([signal, animation.signal]), (t) => setView({
+        x: x + (target.x - x) * t, y: y + (target.y - y) * t,
+        width: width + (target.width - width) * t, height: height + (target.height - height) * t,
+      }));
+    } catch (error) {
+      if (signal.aborted || !animation.signal.aborted) throw error;
+    } finally {
+      if (cameraAnimation === animation) cameraAnimation = undefined;
+    }
+  }
+
+  const panOrigin = (origin, span, limit) => clamp(origin, -span / 2, limit - span / 2);
 
   function updateConnector(rough, wrapper) {
     const { mark, seed } = connectors.get(wrapper);
@@ -183,8 +224,6 @@ export function createCanvas(scene, layer) {
       top: Math.min(...boxes.map((box) => box.y)),
       bottom: Math.max(...boxes.map((box) => box.y + box.height)),
     } : undefined;
-    const { x: viewX, y: viewY, width, height } = scene.viewBox.baseVal;
-
     if (action.kind === 'move') {
       const deltaX = clamp(action.dx, 12 - start.x - bounds.left, WIDTH - 12 - start.x - bounds.right);
       const deltaY = clamp(action.dy, 12 - start.y - bounds.top, HEIGHT - 12 - start.y - bounds.bottom);
@@ -192,7 +231,8 @@ export function createCanvas(scene, layer) {
         const mark = connectors.get(wrapper).mark;
         return mark.from === action.group || mark.to === action.group;
       });
-      await tween(750, signal, (t) => {
+      const { x: viewX, y: viewY, width, height } = scene.viewBox.baseVal;
+      const movement = tween(750, signal, (t) => {
         const x = start.x + deltaX * t;
         const y = start.y + deltaY * t;
         positions.set(action.group, { x, y });
@@ -200,53 +240,68 @@ export function createCanvas(scene, layer) {
         for (const link of links) updateConnector(rough, link);
         if (focusedGroup === action.group) {
           setView({
-            x: clamp(viewX + deltaX * t, 0, WIDTH - width),
-            y: clamp(viewY + deltaY * t, 0, HEIGHT - height), width, height,
+            x: panOrigin(viewX + deltaX * t, width, WIDTH),
+            y: panOrigin(viewY + deltaY * t, height, HEIGHT), width, height,
           });
         }
       });
+      if (manualView || scriptedView) return movement;
+      await Promise.all([movement, animateView(frame({
+        x: start.x + bounds.left + Math.min(0, deltaX), y: start.y + bounds.top + Math.min(0, deltaY),
+        width: bounds.right - bounds.left + Math.abs(deltaX), height: bounds.bottom - bounds.top + Math.abs(deltaY),
+      }), signal)]);
       return;
     }
 
-    let target = overview;
-    if (action.kind === 'focus') {
-      const centerX = start.x + (bounds.left + bounds.right) / 2;
-      const centerY = start.y + (bounds.top + bounds.bottom) / 2;
-      const w = WIDTH / action.zoom;
-      const h = HEIGHT / action.zoom;
-      target = { x: clamp(centerX - w / 2, 0, WIDTH - w), y: clamp(centerY - h / 2, 0, HEIGHT - h), width: w, height: h };
-    }
-    await tween(650, signal, (t) => setView({
-      x: viewX + (target.x - viewX) * t, y: viewY + (target.y - viewY) * t,
-      width: width + (target.width - width) * t, height: height + (target.height - height) * t,
-    }));
-    focusedGroup = action.kind === 'focus' ? action.group : undefined;
+    scriptedView = true;
+    if (manualView) return;
+    const target = action.kind === 'focus' ? frame({
+      x: start.x + bounds.left, y: start.y + bounds.top,
+      width: bounds.right - bounds.left, height: bounds.bottom - bounds.top,
+    }, action.zoom) : contentFrame();
+    await animateView(target, signal);
+    if (!manualView) focusedGroup = action.kind === 'focus' ? action.group : undefined;
   }
 
   return {
     pan(dx, dy) {
       const { x, y, width, height } = scene.viewBox.baseVal;
-      focusedGroup = undefined;
-      setView({ x: clamp(x + dx, 0, WIDTH - width), y: clamp(y + dy, 0, HEIGHT - height), width, height });
+      stopFollowing();
+      setView({ x: panOrigin(x + dx, width, WIDTH), y: panOrigin(y + dy, height, HEIGHT), width, height });
     },
     zoom(factor) {
       const { x, y, width, height } = scene.viewBox.baseVal;
-      const nextWidth = clamp(width / factor, WIDTH / 3, WIDTH);
-      const nextHeight = nextWidth * HEIGHT / WIDTH;
-      focusedGroup = undefined;
+      const worldWidth = frame(overview, 1, 0).width;
+      const nextWidth = clamp(width / factor, worldWidth / 5, Math.max(worldWidth * 1.25, width));
+      const nextHeight = nextWidth * height / width;
+      stopFollowing();
       setView({
-        x: clamp(x + (width - nextWidth) / 2, 0, WIDTH - nextWidth),
-        y: clamp(y + (height - nextHeight) / 2, 0, HEIGHT - nextHeight),
+        x: panOrigin(x + (width - nextWidth) / 2, nextWidth, WIDTH),
+        y: panOrigin(y + (height - nextHeight) / 2, nextHeight, HEIGHT),
         width: nextWidth, height: nextHeight,
       });
     },
     fit() {
-      focusedGroup = undefined;
-      setView(overview);
+      stopFollowing();
+      setView(contentFrame());
+    },
+    follow() {
+      manualView = false;
+      scriptedView = false;
+      setView(contentFrame());
+    },
+    async complete(signal) {
+      currentStep?.classList.remove('rough-current-step');
+      layer.classList.remove('rough-playing');
+      if (signal && !manualView && !scriptedView) await animateView(contentFrame(), signal);
     },
     reset() {
       positions.clear();
+      cameraAnimation?.abort();
       focusedGroup = undefined;
+      currentStep = undefined;
+      manualView = scriptedView = false;
+      layer.classList.remove('rough-playing');
       layer.replaceChildren();
       setView(overview);
     },
@@ -258,9 +313,24 @@ export function createCanvas(scene, layer) {
       if (!marks.length) return;
       const step = document.createElementNS(svgNS, 'g');
       step.dataset.step = String(index + 1);
+      currentStep?.classList.remove('rough-current-step');
+      currentStep = step;
+      step.classList.add('rough-current-step');
+      layer.classList.add('rough-playing');
       layer.append(step);
       marks.forEach((mark, i) => addMark(rough, step, mark, 101 + index * 100 + i * 7));
-      if (marks.length) await animateMarks(step, signal);
+      const drawing = animateMarks(step, signal);
+      if (manualView || scriptedView) return drawing;
+      // First frame the new section. Long inbound arrows should not pull the camera away from it.
+      const localMarks = [...step.children].filter((mark) => !mark.hasAttribute('data-connector'));
+      const boxes = localMarks.map((mark) => mark.getBBox());
+      const x = Math.min(...boxes.map((box) => box.x));
+      const y = Math.min(...boxes.map((box) => box.y));
+      const bounds = boxes.length ? {
+        x, y, width: Math.max(...boxes.map((box) => box.x + box.width)) - x,
+        height: Math.max(...boxes.map((box) => box.y + box.height)) - y,
+      } : step.getBBox();
+      await Promise.all([drawing, animateView(frame(bounds), signal)]);
     },
   };
 }

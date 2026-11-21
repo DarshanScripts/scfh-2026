@@ -2,7 +2,7 @@
   color-scheme: light;
   box-sizing: border-box;
   display: grid;
-  grid-template-rows: auto minmax(12rem, 1fr) auto;
+  grid-template-rows: auto auto minmax(12rem, 1fr) auto;
   gap: .75rem;
   height: 100%;
   min-height: 18rem;
@@ -35,11 +35,15 @@
   background: radial-gradient(circle, #d8e2d6 1px, transparent 1.15px) 0 0 / 21px 21px, #fcfcf5;
 }
 .rough-lesson svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rough-view-controls { position: absolute; right: .55rem; bottom: .55rem; display: flex; gap: .25rem; }
-.rough-view-controls[hidden] { display: none; }
-.rough-view-controls button { font-size: .82rem; min-width: 32px; padding: .25rem .5rem; }
-.rough-lesson-paper:has(.rough-view-controls:not([hidden])) svg { cursor: grab; touch-action: none; }
-.rough-lesson-paper:has(.rough-view-controls:not([hidden])) svg:active { cursor: grabbing; }
+.rough-view-controls { display: flex; flex-wrap: wrap; gap: .35rem; }
+.rough-view-controls button { font-size: .9rem; font-weight: 600; min-width: 38px; min-height: 34px; padding: .3rem .55rem; }
+.rough-view-controls button[hidden] { display: none; }
+.rough-lesson-paper svg { cursor: grab; touch-action: none; }
+.rough-lesson-paper svg:active { cursor: grabbing; }
+.rough-playing > [data-step]:not(.rough-current-step) { opacity: .6; }
+@media (prefers-reduced-motion: no-preference) {
+  .rough-lesson svg [data-step] { transition: opacity .25s ease; }
+}
 .rough-lesson svg text {
   font-family: system-ui, sans-serif;
   font-weight: 600;
