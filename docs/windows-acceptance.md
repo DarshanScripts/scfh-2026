@@ -7,10 +7,10 @@ This release follows [Challenge 2](../plan.md) using the fictional Facilities Se
 | Evidence and contracts | The Python suite verifies reviewed claims, provenance, conflict handling, evidence gaps, and the queue deadline. Every exported contract has a valid and invalid example. Schema drift and the PDF.js offsets passed. |
 | Cited answers | Electron displayed the same answer the tool sent to speech. PDF page 2 and the correct Word occurrence were highlighted. The browser harness covered citation scrolling and reduced motion. LiveKit returned audible speech and the Word citation. |
 | Desktop actions | Windows-MCP opened a test window, entered text, clicked native and HTML buttons, followed a link, and reached `example.com`. Pointer sampling confirmed intermediate positions. Windows window enumeration confirmed the control border was present and the rectangular notice was absent. |
-| Workflow | LiveKit narrated all seven approved steps. The canvas checks verified ordered reveals, interruption, restart, moving connected elements, and full-scene PNG export. |
-| Orb and video | The Electron orb joined a real LiveKit room using a scripted microphone. Local tests covered cancel, end, voice-only media, and a simulated matching avatar track. Beyond Presence returned HTTP 402 for its usage limit. LiveKit Q&A and walkthrough sessions continued with working voice-only audio. |
+| Workflow | A live Beyond Presence session narrated all seven approved steps. The canvas checks verified ordered reveals, interruption, restart, moving connected elements, and full-scene PNG export. |
+| Orb and video | The Electron orb joined a real LiveKit room using a scripted microphone. Local tests covered cancel, end, voice-only media, and a simulated matching avatar track. A live cited Q&A session verified Beyond Presence video and audible speech. An earlier usage-limit test verified the voice-only fallback. |
 
-The spoken desktop checks via the command-line client and the Electron orb reached the Windows-MCP `Click` tool. The fixture did not register the click. A Windows security dialog was observed taking focus during the command-line check. Re-run `npm.cmd run test:voice` after the desktop is clear.
+The live spoken desktop check with Beyond Presence transcribed the command, clicked the native Windows button, and verified the fixture callback. During desktop actions, keep the mouse and keyboard idle and clear any system dialog covering the target.
 
 The Anam placeholder shares the existing LiveKit avatar viewport. A future Anam adapter can publish to the same room using the server-side integration. [Anam LiveKit integration](https://anam.ai/integrations/livekit)
 
