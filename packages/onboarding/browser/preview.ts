@@ -1,4 +1,11 @@
-import type { Citation } from "./contracts";
+import type { Citation, Passage } from "./contracts";
+
+export function citationPage(locator: Passage["locator"]) {
+  if (locator.format !== "pdf") return locator.pageLabel ? "p. " + locator.pageLabel : "";
+  const physical = String(locator.page);
+  if (!locator.pageLabel || locator.pageLabel === physical) return "p. " + physical;
+  return "p. " + locator.pageLabel + " (PDF " + physical + ")";
+}
 
 const NO_HIGHLIGHT = "Opened the source location. The exact passage couldn’t be highlighted.";
 

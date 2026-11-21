@@ -1,6 +1,6 @@
 import { isAnswer, isCitation, isWalkthrough, type Passage, type ReadyWorkflow } from "./contracts";
 import { exportDiagram, PlaybackRun, renderDiagram, workflowScene } from "./diagram";
-import { preview } from "./preview";
+import { citationPage, preview } from "./preview";
 
 const query = document.querySelector<HTMLInputElement>("#query")!;
 const form = document.querySelector<HTMLFormElement>("#question-form")!;
@@ -19,6 +19,10 @@ const save = document.querySelector<HTMLButtonElement>("#save")!;
 let sourceSequence = 0;
 let responseSequence = 0;
 let run: PlaybackRun | undefined;
+const harbour = document.body.dataset.knowledge === "harbour";
+let workflowStepId: string | undefined;
+let previousQuery: string | undefined;
+const conversationId = crypto.randomUUID();
 
 async function post(path: string, payload: unknown): Promise<unknown> {
   const response = await fetch(path, {
@@ -58,9 +62,8 @@ function showCitations(requestId: string, passages: Passage[]) {
     link.type = "button";
     link.className = "citation";
     link.dataset.passage = passage.passageId;
-    const page = passage.locator.pageLabel ||
-      (passage.locator.format === "pdf" ? String(passage.locator.page) : "");
-    link.textContent = [passage.title, passage.sectionPath.join(" › "), page ? "p. " + page : ""]
+    const page = citationPage(passage.locator);
+    link.textContent = [passage.title, passage.sectionPath.join(" › "), page]
       .filter(Boolean).join(" · ");
     link.addEventListener("click", () => void openCitation(requestId, passage));
     citations.append(link);
@@ -89,6 +92,8 @@ async function play(workflow: ReadyWorkflow) {
     for (const [index, step] of workflow.steps.entries()) {
       if (!active.accept(active.event("stepStarted", index))) return;
       narration.textContent = step.narration;
+      if (harbour) workflowStepId = workflow.workflowId === "hildesheim-harbour-funding"
+        ? "financial-feasibility" : step.stepId;
       const view = await renderDiagram(workflowScene(workflow, active.count));
       if (run !== active || active.state !== "playing") return;
       diagram.replaceChildren(view);
@@ -117,10 +122,15 @@ form.addEventListener("submit", async event => {
   answer.textContent = "Searching approved sources…";
   citations.replaceChildren();
   try {
-    const payload = await post(walkthrough ? "/api/walkthrough" : "/api/question", { query: query.value });
+    const asked = query.value.trim();
+    const payload = await post(walkthrough ? "/api/walkthrough" : "/api/question", harbour ? {
+      schemaVersion: 1, query: asked, turnId: conversationId, requestId: crypto.randomUUID(),
+      context: { workflowStepId, previousQuery },
+    } : { query: asked });
     if (responseSequence !== sequence) return;
     if (walkthrough && isWalkthrough(payload)) {
       if (payload.outcome === "ready") {
+        if (harbour) previousQuery = asked;
         answer.textContent = payload.title;
         showCitations(payload.requestId, payload.citations);
         void play(payload);
@@ -130,6 +140,7 @@ form.addEventListener("submit", async event => {
       return;
     }
     if (!walkthrough && isAnswer(payload)) {
+      if (harbour && payload.outcome !== "insufficient") previousQuery = asked;
       answer.textContent = payload.text;
       showCitations(payload.requestId, payload.citations);
       return;

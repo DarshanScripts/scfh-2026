@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from .contracts import Answer, CitationRequest, CitationUnavailable, Query, Request, StrictModel, Walkthrough
 from .knowledge import FixtureKnowledge
+from .harbour import HarbourKnowledge
 from .rag import QdrantKnowledge, RagError
 from .schema import SCHEMAS
 
@@ -46,6 +47,7 @@ class Harness:
                 for font in excalidraw_fonts.rglob("*.woff2")
             },
         }
+        self.is_harbour = isinstance(self.knowledge, HarbourKnowledge)
         self.is_rag = isinstance(self.knowledge, QdrantKnowledge)
         self.results: OrderedDict[UUID, Answer | Walkthrough] = OrderedDict()
         self.lock = Lock()
@@ -109,6 +111,27 @@ class Handler(BaseHTTPRequestHandler):
         if path is None or not path.is_file():
             self.send_error(404)
             return
+        if url.path == "/" and self.harness.is_harbour:
+            html = path.read_text(encoding="utf-8")
+            html = html.replace("<body>", '<body data-knowledge="harbour">')
+            html = html.replace("Facilities Service Desk", "Hildesheim Harbour")
+            html = html.replace("Where is the maintenance intake guide?", "Walk me through the funding stage")
+            html = html.replace("Onboarding demo with sample documents", "Haushaltsplan 2026/2027 · Harbour expansion and renovation")
+            replacements = [
+                ("Where’s the guide for logging a maintenance request, and what do I need before I open a ticket?",
+                 "What are the estimated project costs and projected receipts?"),
+                ("A ticket has no owner. When should I follow up, and who do I tell?",
+                 "What did the council prioritize, and what did it allow for the western quay?"),
+                ("I’m taking over the queue. Which open item is due first, and who owns it?",
+                 "What reporting and immediate escalation did the council require?"),
+                ("Intake checklist", "Costs and receipts"),
+                ("Unassigned ticket", "Council priorities"),
+                ("Next deadline", "Project reporting"),
+            ]
+            for before, after in replacements:
+                html = html.replace(before, after)
+            self.send_payload(200, html.encode("utf-8"), "text/html; charset=utf-8")
+            return
         if url.path == "/" and self.harness.is_rag:
             html = path.read_text(encoding="utf-8")
             html = html.replace("Facilities Service Desk", "Denton facilities document search")
@@ -151,6 +174,8 @@ class Handler(BaseHTTPRequestHandler):
                 request = Request.model_validate_json(payload)
                 query = request.query
                 ids = {"request_id": request.requestId, "turn_id": request.turnId}
+                if self.harness.is_harbour:
+                    ids["context"] = request.context
             except ValidationError:
                 query = Question.model_validate_json(payload).query
                 ids = {}
@@ -173,7 +198,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--knowledge", choices=["fixtures", "qdrant"], default="fixtures")
+    parser.add_argument("--knowledge", choices=["fixtures", "qdrant", "harbour"], default="fixtures")
     parser.add_argument("--pdfjs-dir", type=Path, default=Path("node_modules/pdfjs-dist"))
     parser.add_argument("--bundle", type=Path, default=Path("dist/harness.js"))
     parser.add_argument("--excalidraw-fonts", type=Path,
@@ -188,7 +213,8 @@ def main() -> None:
     if not args.bundle.is_file():
         parser.error("Build the harness bundle before starting the server")
     try:
-        knowledge = QdrantKnowledge() if args.knowledge == "qdrant" else FixtureKnowledge()
+        knowledge_type = {"harbour": HarbourKnowledge, "qdrant": QdrantKnowledge, "fixtures": FixtureKnowledge}
+        knowledge = knowledge_type[args.knowledge]()
     except RagError as error:
         parser.error(str(error))
     harness = Harness(args.pdfjs_dir, args.bundle, args.excalidraw_fonts, knowledge)

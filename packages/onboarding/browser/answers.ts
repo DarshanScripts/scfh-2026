@@ -1,5 +1,5 @@
 import { isAnswer, isCitation, type Passage } from './contracts';
-import { preview } from './preview';
+import { citationPage, preview } from './preview';
 
 export function mountAnswerPanel(root: ParentNode) {
   const part = (name: string) => root.querySelector<HTMLElement>(`[data-answer-part="${name}"], #${name}`)!;
@@ -87,13 +87,13 @@ export function mountAnswerPanel(root: ParentNode) {
       button.type = 'button';
       button.className = 'citation';
       button.dataset.passage = passage.passageId;
-      const page = passage.locator.pageLabel ?? (passage.locator.format === 'pdf' ? passage.locator.page : undefined);
+      const page = citationPage(passage.locator);
       const title = document.createElement('span');
       title.className = 'citation-title';
       title.textContent = passage.title;
       const detail = document.createElement('span');
       detail.className = 'citation-detail';
-      detail.textContent = [passage.sectionPath.join(' › '), page ? `p. ${page}` : ''].filter(Boolean).join(' · ');
+      detail.textContent = [passage.sectionPath.join(' › '), page].filter(Boolean).join(' · ');
       button.append(title, detail);
       button.title = passage.quote;
       button.onclick = () => void openCitation(result.requestId, passage);

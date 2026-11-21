@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { cli, defineAgent, inference, ServerOptions, voice } from '@livekit/agents';
 import { AvatarSession } from '@livekit/agents-plugin-bey';
@@ -22,9 +23,19 @@ export default defineAgent({
     const { model } = settings;
     const client = await createAnthropicClient(settings);
     const desktopGuard = createDesktopActionGuard();
-    const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
+    const harbour = process.env.ONBOARDING_KNOWLEDGE === 'harbour';
+    const harbourCorpus = new URL('./packages/onboarding/harbour-corpus/', import.meta.url);
+    const harbourIndex = harbour ? await readFile(new URL('qdrant-state.json', harbourCorpus), 'utf8')
+      .catch(() => readFile(new URL('collection.json', harbourCorpus), 'utf8'))
+      .then(text => JSON.parse(text).generation)
+      .catch(() => null) : null;
+    const harbourFolder = /^[a-f0-9]{16}$/.test(harbourIndex ?? '')
+      ? fileURLToPath(new URL('downloaded/' + harbourIndex + '/', harbourCorpus))
+      : undefined;
+    const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL, { harbour });
     let avatarAudio;
-    const workflows = createWorkflowTools({ room: ctx.room, getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough });
+    const workflows = createWorkflowTools({ room: ctx.room, getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough,
+      onWorkflowStep: onboarding.onWorkflowStep, harbour });
     ctx.addShutdownCallback(() => workflows.close());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
@@ -40,6 +51,7 @@ export default defineAgent({
     }
     const agent = voice.Agent.create({
       instructions: desktopInstructions(language, {
+        harbour, harbourFolder,
         onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
       }),
       onUserTurnCompleted: beginUserTurn,

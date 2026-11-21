@@ -30,10 +30,16 @@ class Versioned(StrictModel):
     schemaVersion: Literal[1] = 1
 
 
+class QueryContext(StrictModel):
+    workflowStepId: Slug | None = None
+    previousQuery: Query | None = None
+
+
 class Request(Versioned):
     requestId: UUID
     turnId: UUID
     query: Query
+    context: QueryContext | None = None
 
 
 class Span(StrictModel):

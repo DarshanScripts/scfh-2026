@@ -52,3 +52,7 @@ npm.cmd run test:voice -- --walkthrough
 ```
 
 Start the app before the voice tests. Add `--require-avatar` to require live video. See the [release checks](docs/windows-acceptance.md) and the [portable onboarding package](packages/onboarding/README.md) for its Linux harness and optional Qdrant mode.
+
+## Hildesheim Harbour demo
+
+Use the separate Harbour corpus to explore the city's budget and council evidence for harbour expansion and renovation. See the [three-prompt jury run and Windows setup](docs/hildesheim-harbour-demo.md) and [corpus notes](packages/onboarding/harbour-corpus/README.md).

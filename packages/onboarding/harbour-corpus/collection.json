@@ -1,0 +1,7 @@
+{
+  "collection": "relay-hildesheim-harbour-20261121-090725-2f5a32",
+  "generation": "86f7f623648ae047",
+  "embeddingModel": "cohere/embed-5-fast",
+  "dimensions": 768,
+  "passageCount": 194
+}

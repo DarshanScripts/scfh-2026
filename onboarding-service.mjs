@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 export async function startOnboardingService() {
   const cwd = fileURLToPath(new URL('./packages/onboarding/', import.meta.url));
   const knowledge = process.env.ONBOARDING_KNOWLEDGE || 'fixtures';
-  if (!['fixtures', 'qdrant'].includes(knowledge)) throw new Error('ONBOARDING_KNOWLEDGE must be fixtures or qdrant.');
+  if (!['fixtures', 'qdrant', 'harbour'].includes(knowledge)) throw new Error('ONBOARDING_KNOWLEDGE must be fixtures, qdrant or harbour.');
   const ragVariables = new Set(['QDRANT_URL', 'QDRANT_API_KEY', 'OPENROUTER_API_KEY',
     'EMBEDDING_MODEL', 'ANTHROPIC_API_KEY', 'LLM_MODEL', 'REASONING_EFFORT']);
   const child = spawn('uv', ['run', '--locked', '--no-sync', '--no-env-file', 'python', '-m', 'onboarding.server', '--port', '0', '--knowledge', knowledge], {
     cwd, windowsHide: true, stdio: ['ignore', 'pipe', 'inherit'],
     env: Object.fromEntries(Object.entries(process.env).filter(([name]) =>
-      /^(path|pathext|windir|systemroot|systemdrive|userprofile|localappdata|appdata|programdata|temp|tmp)$/i.test(name) || (knowledge === 'qdrant' && ragVariables.has(name)))),
+      /^(path|pathext|windir|systemroot|systemdrive|userprofile|localappdata|appdata|programdata|temp|tmp)$/i.test(name) || (knowledge !== 'fixtures' && ragVariables.has(name)))),
   });
   function close() {
     if (!child.pid || child.exitCode !== null || child.signalCode !== null) return;

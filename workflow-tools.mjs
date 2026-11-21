@@ -55,7 +55,7 @@ function cameraFor(scene) {
   return { type: 'cameraUpdate', x: (right + 64 - width) / 2, y: -25, width, height: width * 3 / 4 };
 }
 
-export function createWorkflowTools({ room, getAvatarAudio = () => undefined, getWalkthrough } = {}) {
+export function createWorkflowTools({ room, getAvatarAudio = () => undefined, getWalkthrough, onWorkflowStep, harbour = false } = {}) {
   let active;
   const onData = (bytes, participant, _kind, topic) => {
     if (topic === CLOSE_TOPIC && bytes.byteLength <= 80 && active?.destination === participant?.identity &&
@@ -142,6 +142,7 @@ export function createWorkflowTools({ room, getAvatarAudio = () => undefined, ge
           session, avatarAudio: getAvatarAudio(), text: step.narration, signal,
           reveal() {
             if (run.playback && !run.playback.accept(run.playback.event('stepStarted', index))) throw new Error('Unexpected walkthrough step.');
+            if (run.playback) onWorkflowStep?.(run.playback.workflow.steps[index].stepId, run.playback.workflow.workflowId);
             drawing = preview.send({ type: 'step', index, narration: step.narration, marks: step.marks, actions: step.actions }, signal);
             void drawing.catch(() => {});
           },
@@ -220,7 +221,9 @@ export function createWorkflowTools({ room, getAvatarAudio = () => undefined, ge
   });
   const documented = llm.tool({
     name: 'get_onboarding_walkthrough',
-    description: 'Narrate the approved Facilities maintenance intake workflow on the Rough.js canvas. Use the user’s wording. This tool follows the documented steps and branches.',
+    description: harbour
+      ? 'Narrate the sourced Hildesheim Harbour workflow, or one named stage such as funding, on the Rough.js canvas. Pass the user wording.'
+      : 'Narrate the approved Facilities maintenance intake workflow on the Rough.js canvas. Use the user’s wording. This tool follows the documented steps and branches.',
     parameters: { type: 'object', additionalProperties: false, required: ['query'],
       properties: { query: { type: 'string', maxLength: 600 } } },
     execute: async ({ query }, { ctx, abortSignal }) => {
