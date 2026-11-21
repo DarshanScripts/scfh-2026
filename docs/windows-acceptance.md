@@ -2,7 +2,7 @@
 
 This release follows [Challenge 2](../plan.md) using the fictional Facilities Service Desk. The Windows app uses reviewed fixtures and the Rough.js Workflow Canvas. The portable browser harness still exercises the Excalidraw renderer.
 
-`start.cmd` now opens the Electron sidebar. It includes live transcripts, inline PDF and Word citations, source fullscreen, collapse and expand, and a canvas in the same window. Closing the canvas restores the conversation. The integration passed 21 Node tests, 33 Python tests, and live avatar Q&A and seven-step walkthrough checks. The sidebar transport acknowledges drawing updates before continuing narration.
+`start.cmd` opens the Electron sidebar with live transcripts, inline PDF and Word citations, source fullscreen, and collapse and expand controls. The Rough.js canvas opens in a separate window. The Electron test verifies that the canvas and sidebar take up 50% and 30% of the display work area. Both hide during desktop control. The sidebar returns without taking focus, while the drawing stays available through **Show canvas**. The sidebar transport acknowledges drawing updates before continuing narration. The original integration also passed live avatar Q&A and seven-step walkthrough checks.
 
 | Plan area | Verification |
 | --- | --- |

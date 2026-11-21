@@ -185,7 +185,7 @@ export function createWorkflowTools({ room, getAvatarAudio = () => undefined, ge
   }
   const draw = llm.tool({
     name: 'draw_workflow',
-    description: 'Open the Rough.js Workflow Canvas for a narrated flowchart, timeline, swimlane, or hierarchy. Supply short labels, one explanation per step, and directed zero-based connections. This tool handles speech and drawing.',
+    description: 'Open the Canvas for a narrated flowchart, timeline, swimlane, or hierarchy. Use short action labels, one visual change per explanation, and directed zero-based connections. This tool handles speech and drawing.',
     parameters: {
       type: 'object', additionalProperties: false, required: ['title', 'steps', 'narration', 'connections'],
       properties: {
@@ -250,7 +250,7 @@ export function createWorkflowTools({ room, getAvatarAudio = () => undefined, ge
   });
   const sketch = llm.tool({
     name: 'draw_canvas',
-    description: 'Draw a narrated chart or free-form illustration on the Rough.js canvas, including positionable shapes, curves, and connected objects. Use focus, move, or fit for camera and object animation. Layout is 1000 by 600. Give objects stable groups and connect only visible groups using from/to.',
+    description: 'Draw a narrated chart or visual explanation on a 1000 by 600 canvas. Use symbols for people, tickets, documents, and queues. Show one visual change per step and explain details aloud. Use move for a transfer, focus for a key detail, and fit for the final overview. Give objects stable groups and connect visible groups with from and to.',
     parameters: lessonSchema,
     execute: async (lesson, { ctx, abortSignal }) => start(lesson, ctx, abortSignal),
   });

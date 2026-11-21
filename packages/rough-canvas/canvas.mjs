@@ -1,7 +1,19 @@
-import { COLORS, HEIGHT, MAX_ACTIONS, MAX_LABEL, MAX_MARKS, MAX_STEPS, WIDTH, fitsScene, nodeIdPattern, validActionTargets } from './contract.mjs';
+import { COLORS, HEIGHT, MAX_ACTIONS, MAX_LABEL, MAX_MARKS, MAX_STEPS, SYMBOLS, WIDTH, fitsScene, nodeIdPattern, validActionTargets } from './contract.mjs';
 
 const svgNS = 'http://www.w3.org/2000/svg';
-const kinds = new Set(['rectangle', 'ellipse', 'diamond', 'line', 'arrow', 'polyline', 'curve', 'label']);
+const kinds = new Set(['rectangle', 'ellipse', 'diamond', 'line', 'arrow', 'polyline', 'curve', 'label', 'symbol']);
+const symbolPaths = {
+  ticket: 'M4 5h16v5a2 2 0 0 0 0 4v5H4v-5a2 2 0 0 0 0-4V5m8 0v14',
+  document: 'M6 3h8l4 4v14H6z M14 3v5h4 M9 12h6m-6 4h6',
+  check: 'm5 12 5 5L20 7',
+  search: 'M15 10a5 5 0 1 1-10 0 5 5 0 0 1 10 0m-1 4 5 5',
+  person: 'M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6 20v-2a6 6 0 0 1 12 0v2',
+  handoff: 'M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4',
+  queue: 'M5 6h14M5 12h14M5 18h14',
+  alert: 'M12 4 3 20h18L12 4zm0 6v4m0 3v.5',
+  clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0m-9-5v5l3 2',
+  folder: 'M3 6h7l2 3h9v10H3z',
+};
 const fills = { ink: '#eef1f4', teal: '#e4f0e9', blue: '#e9eff8', amber: '#fbf0df', rose: '#f7e9ed' };
 const point = (x, y) => Number.isInteger(x) && x >= 20 && x <= WIDTH - 20 &&
   Number.isInteger(y) && y >= 20 && y <= HEIGHT - 20;
@@ -36,6 +48,9 @@ function isMark(mark) {
     case 'label':
       return point(mark.x, mark.y) && shortText(mark.text, MAX_LABEL) &&
         (mark.fontSize === undefined || (Number.isInteger(mark.fontSize) && mark.fontSize >= 10 && mark.fontSize <= 26));
+    case 'symbol':
+      return point(mark.x, mark.y) && SYMBOLS.includes(mark.name) && Number.isInteger(mark.size) &&
+        mark.size >= 14 && mark.size <= 64 && fitsScene(mark);
   }
 }
 
@@ -79,6 +94,19 @@ function drawMark(rough, mark, seed) {
       label.setAttribute('font-size', mark.fontSize ?? 20);
       label.textContent = mark.text;
       return [label];
+    }
+    case 'symbol': {
+      const glyph = document.createElementNS(svgNS, 'path');
+      const scale = mark.size / 32;
+      glyph.setAttribute('d', symbolPaths[mark.name]);
+      glyph.setAttribute('transform', `translate(${x} ${y}) scale(${scale}) translate(-12 -12)`);
+      glyph.setAttribute('fill', 'none');
+      glyph.setAttribute('stroke', stroke);
+      glyph.setAttribute('stroke-width', '2.2');
+      glyph.setAttribute('stroke-linejoin', 'round');
+      glyph.setAttribute('stroke-linecap', 'round');
+      glyph.setAttribute('data-symbol', mark.name);
+      return [rough.ellipse(x, y, mark.size, mark.size, shape), glyph];
     }
   }
 }
@@ -196,6 +224,26 @@ export function createCanvas(scene, layer) {
   }
 
   return {
+    pan(dx, dy) {
+      const { x, y, width, height } = scene.viewBox.baseVal;
+      focusedGroup = undefined;
+      setView({ x: clamp(x + dx, 0, WIDTH - width), y: clamp(y + dy, 0, HEIGHT - height), width, height });
+    },
+    zoom(factor) {
+      const { x, y, width, height } = scene.viewBox.baseVal;
+      const nextWidth = clamp(width / factor, WIDTH / 3, WIDTH);
+      const nextHeight = nextWidth * HEIGHT / WIDTH;
+      focusedGroup = undefined;
+      setView({
+        x: clamp(x + (width - nextWidth) / 2, 0, WIDTH - nextWidth),
+        y: clamp(y + (height - nextHeight) / 2, 0, HEIGHT - nextHeight),
+        width: nextWidth, height: nextHeight,
+      });
+    },
+    fit() {
+      focusedGroup = undefined;
+      setView(overview);
+    },
     reset() {
       positions.clear();
       focusedGroup = undefined;

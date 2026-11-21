@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Voice workspace</title>
 <link rel="stylesheet" href="/pdfjs/pdf_viewer.css">
-<link rel="stylesheet" href="/rough/panel.css">
 <link rel="stylesheet" href="/sidebar.css">
 </head>
 <body>
@@ -29,6 +28,14 @@
     <p id="status" role="status" hidden></p>
   </header>
   <section class="conversation" aria-label="Conversation">
+    <aside id="desktop-recap" aria-labelledby="desktop-recap-title" hidden>
+      <div class="recap-header">
+        <h2 id="desktop-recap-title">Last desktop request</h2>
+        <button id="show-canvas" type="button" hidden>Show canvas</button>
+      </div>
+      <p id="desktop-request"></p>
+      <p id="desktop-result" role="status"></p>
+    </aside>
     <div id="transcript" role="log" aria-live="polite">
       <p id="empty-transcript">Start a call to ask a question or walk through a process.</p>
     </div>
@@ -52,9 +59,7 @@
   </section>
 </main>
 <button id="expand" type="button" title="Expand sidebar" aria-label="Expand sidebar" hidden>‹</button>
-<section id="diagram" aria-label="Workflow canvas" hidden></section>
 <script src="/livekit.js"></script>
-<script src="/rough/rough.js"></script>
 <script type="module" src="/orb.js"></script>
 </body>
 </html>

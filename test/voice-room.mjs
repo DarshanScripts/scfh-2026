@@ -10,6 +10,7 @@ import {
   Room, RoomEvent, TrackKind, TrackSource, dispose,
 } from '@livekit/rtc-node';
 import { avatarModeAttribute, voiceFallback } from '../avatar-mode.mjs';
+import { DESKTOP_CONTROL_RPC } from '../desktop-control-rpc.mjs';
 import { DRAW_RPC } from '../packages/rough-canvas/contract.mjs';
 import { validateStep } from '../packages/rough-canvas/canvas.mjs';
 
@@ -132,6 +133,8 @@ try {
   avatarEnabled = withAvatar === true;
   await room.connect(url, token);
   room.localParticipant.registerRpcMethod(DRAW_RPC, handleCanvas);
+  room.localParticipant.registerRpcMethod(DESKTOP_CONTROL_RPC, async ({ payload }) =>
+    ['start', 'stop', 'result'].includes(JSON.parse(payload).type) ? 'ok' : 'invalid');
   const track = LocalAudioTrack.createAudioTrack('test-microphone', source);
   await room.localParticipant.publishTrack(track, { source: TrackSource.SOURCE_MICROPHONE });
   await waitFor(() => [...room.remoteParticipants.values()].some((p) => p.attributes['lk.agent.state'] === 'listening'),

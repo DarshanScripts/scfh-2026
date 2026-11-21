@@ -5,6 +5,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { _electron } from 'playwright-core';
 import { loadOrbAssets } from '../orb-assets.mjs';
+import { DESKTOP_CONTROL_RPC } from '../desktop-control-rpc.mjs';
+import { DRAW_RPC } from '../packages/rough-canvas/contract.mjs';
 
 async function withOrb(run, { sdk, callResponse } = {}) {
   const root = new URL('../', import.meta.url);
@@ -130,7 +132,10 @@ const simulatedLiveKit = `
     Room: class {
       constructor() {
         this.events = new Map();
-        this.localParticipant = { publishTrack: async () => {}, publishData: async () => {} };
+        this.localParticipant = {
+          publishTrack: async () => {},
+          publishData: async (data, options) => { this.lastData = [new TextDecoder().decode(data), options.topic]; },
+        };
         this.remoteParticipants = new Map([
           ['caller', participant('caller', {}, ['audio', 'video'], 0)],
           ['agent', participant('agent', { 'lk.agent.state': 'listening' }, ['audio'])],
@@ -140,7 +145,8 @@ const simulatedLiveKit = `
       }
       on(event, handler) { this.events.set(event, handler); }
       registerTextStreamHandler() {}
-      registerRpcMethod(_method, handler) { this.rpc = handler; }
+      rpc = new Map();
+      registerRpcMethod(method, handler) { this.rpc.set(method, handler); }
       async connect() {}
       async startAudio() {}
       async disconnect() { this.events.get('disconnected')?.(); }
@@ -163,29 +169,86 @@ const simulatedLiveKit = `
   };
 `;
 
-test('the assigned agent can show the canvas and restore the sidebar in the same window', async () => {
+test('the avatar and canvas stay side by side and yield the desktop during computer use', async () => {
   await withOrb(async ({ app, page }) => {
     await page.getByRole('button', { name: 'Start call' }).click();
+    await page.evaluate(() => window.testRoom.publishAvatar());
     await page.locator('main[data-state="listening"]').waitFor();
+    const avatar = page.locator('#avatar');
+    assert(await avatar.isVisible());
     const begin = { type: 'begin', id: 'test-canvas', title: 'Onboarding', total: 1 };
-    const send = (callerIdentity, message) => page.evaluate(({ callerIdentity, message }) =>
-      window.testRoom.rpc({ callerIdentity, payload: JSON.stringify(message) }), { callerIdentity, message });
+    const send = (callerIdentity, message) => page.evaluate(({ method, callerIdentity, payload }) =>
+      window.testRoom.rpc.get(method)({ callerIdentity, payload }),
+    { method: DRAW_RPC, callerIdentity, payload: JSON.stringify(message) });
+    const desktop = (message, callerIdentity = 'agent') => page.evaluate(({ method, callerIdentity, payload }) =>
+      window.testRoom.rpc.get(method)({ callerIdentity, payload }),
+    { method: DESKTOP_CONTROL_RPC, callerIdentity, payload: JSON.stringify(message) });
+    const windowState = () => app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows().map(win => [win.getTitle(), win.isVisible(), win.isFocusable(), win.isFocused()]).sort());
+
+    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    await page.getByRole('button', { name: 'Expand sidebar' }).waitFor();
     assert.equal(await send('unrelated-participant', begin), 'invalid');
+    const opened = app.waitForEvent('window');
     assert.equal(await send('agent', begin), 'ok');
-    await page.locator('body[data-mode="canvas"]').waitFor();
+    const canvas = await opened;
+    assert(await avatar.isVisible());
+    assert(await page.getByRole('log').isVisible());
+    const layout = await app.evaluate(({ BrowserWindow, screen }) => {
+      const windows = BrowserWindow.getAllWindows();
+      const sidebar = windows.find(win => win.getTitle() === 'Voice workspace').getBounds();
+      const canvas = windows.find(win => win.getTitle() === 'Canvas').getBounds();
+      return { sidebar, canvas, area: screen.getDisplayMatching(sidebar).workArea };
+    });
+    const { sidebar, canvas: drawing, area } = layout;
+    assert.deepEqual(drawing, { x: area.x, y: area.y, width: Math.round(area.width * .5), height: area.height });
+    assert.equal(sidebar.width, Math.round(area.width * .3));
+    assert.equal(sidebar.x + sidebar.width, area.x + area.width);
+    assert(drawing.x + drawing.width < sidebar.x);
     assert.equal(await send('agent', { type: 'step', id: begin.id, index: 0, narration: 'Check the source.', marks: [
-      { kind: 'rectangle', x: 100, y: 100, width: 160, height: 80, group: 'source' },
+      { kind: 'symbol', x: 130, y: 140, name: 'document', size: 36, group: 'source' },
       { kind: 'label', x: 180, y: 140, text: 'Source', group: 'source' },
     ] }), 'ok');
     assert.equal(await send('agent', { type: 'completed', id: begin.id }), 'ok');
-    await page.getByRole('button', { name: 'Save as PNG' }).waitFor();
-    await page.getByRole('button', { name: 'Close canvas' }).click();
+    await canvas.getByRole('button', { name: 'Save as PNG' }).waitFor();
+    await canvas.getByText('Check the source.').waitFor();
+    assert.equal(await canvas.locator('[data-symbol="document"]').count(), 1);
+    await canvas.getByRole('button', { name: 'Zoom in' }).click();
+    const zoomed = await canvas.locator('svg').getAttribute('viewBox');
+    assert.notEqual(zoomed, '0 0 1000 600');
+    const map = await canvas.locator('svg').boundingBox();
+    await canvas.mouse.move(map.x + map.width / 2, map.y + map.height / 2);
+    await canvas.mouse.down();
+    await canvas.mouse.move(map.x + map.width / 2 + 35, map.y + map.height / 2);
+    await canvas.mouse.up();
+    assert.notEqual(await canvas.locator('svg').getAttribute('viewBox'), zoomed);
+    await canvas.getByRole('button', { name: 'Fit view' }).click();
+    assert.equal(await canvas.locator('svg').getAttribute('viewBox'), '0 0 1000 600');
+    const desktopStart = { type: 'start', id: '55a8d92a-9f8c-4c99-8097-c271b637ced1', request: 'Open the Facilities onboarding folder.' };
+    assert.equal(await desktop(desktopStart, 'unrelated-participant'), 'invalid');
+    assert.equal(await desktop(desktopStart), 'ok');
+    assert.deepEqual(await windowState(), [
+      ['Canvas', false, false, false], ['Voice workspace', false, false, false],
+    ]);
+    await app.evaluate(({ BrowserWindow }) => new BrowserWindow({ title: 'Desktop result', width: 300, height: 200 }).focus());
+    assert.equal(await desktop({ type: 'stop' }), 'ok');
+    assert.deepEqual(await windowState(), [
+      ['Canvas', false, false, false], ['Desktop result', true, true, true], ['Voice workspace', true, true, false],
+    ]);
+    assert.equal(await desktop({ type: 'result', id: desktopStart.id, text: 'Opened the folder in File Explorer.' }), 'ok');
+    assert.equal(await page.locator('#desktop-request').textContent(), desktopStart.request);
+    assert.equal(await page.locator('#desktop-result').textContent(), 'Opened the folder in File Explorer.');
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(win => win.getTitle() === 'Desktop result').close());
+    assert(await avatar.isVisible());
+    await page.getByRole('button', { name: 'Show canvas' }).click();
+    await canvas.getByRole('button', { name: 'Close canvas' }).click();
+    await page.waitForFunction(() => window.testRoom.lastData?.[0] === 'test-canvas');
     await page.locator('body[data-mode="sidebar"]').waitFor();
     assert.equal(app.windows().length, 1);
     await page.getByRole('button', { name: 'Collapse sidebar' }).click();
     await page.getByRole('button', { name: 'Expand sidebar' }).click();
     await page.getByRole('button', { name: 'End call' }).click();
-  }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: false } });
+  }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: true } });
 });
 
 for (const avatarEnabled of [false, true]) {

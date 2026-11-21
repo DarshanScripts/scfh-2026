@@ -7,6 +7,9 @@ export async function loadOrbAssets() {
     ['/', './demo/index.html', 'text/html'],
     ['/sidebar.css', './demo/sidebar.css', 'text/css'],
     ['/orb.js', './demo/orb.js', 'text/javascript'],
+    ['/desktop-control-rpc.mjs', './desktop-control-rpc.mjs', 'text/javascript'],
+    ['/workflow-canvas', './demo/workspace-canvas.html', 'text/html'],
+    ['/workspace-canvas.mjs', './demo/workspace-canvas.mjs', 'text/javascript'],
     ['/livekit.js', './node_modules/livekit-client/dist/livekit-client.umd.js', 'text/javascript'],
     ['/rough/rough.js', './node_modules/roughjs/bundled/rough.js', 'text/javascript'],
     ...['panel.mjs', 'canvas.mjs', 'contract.mjs', 'export.mjs', 'panel.css'].map(name =>

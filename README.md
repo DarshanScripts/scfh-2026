@@ -20,9 +20,11 @@ Pop-Location
 
 Set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `ANTHROPIC_API_KEY` in `.env`. Use `LLM_MODEL` to select Claude and `REASONING_EFFORT=none` for the quickest replies. For video, set `ENABLE_AVATAR=1` and `BEYOND_PRESENCE_API_KEY`. The call switches to voice if the provider cannot start. Anam is reserved for a future video adapter.
 
-Run `./start.cmd` on an unlocked desktop. The Electron sidebar opens on the right. Select **Start call** and wait for **Listening**, then **End call** to finish. Collapse the sidebar to keep the call running in a small edge tab. The canvas opens in the same window, and **Close canvas** restores the conversation and open citation. Use `./restart.cmd` to reload a running app after code or configuration changes. Use `./stop.cmd` to close it. Startup logs are in `.hcu/`.
+Run `./start.cmd` on an unlocked desktop. The Electron sidebar opens on the right. Select **Start call** and wait for **Listening**, then **End call** to finish. You can use **Collapse sidebar** to keep the call running in a small edge tab. A walkthrough opens **Canvas** on the left 50% of the screen and keeps the avatar and transcript on the right 30%. During desktop control, both windows step aside. The sidebar returns with the last request and reply. The target app keeps focus, and **Show canvas** brings back the drawing when you want it. Use `./restart.cmd` to reload a running app. Use `./stop.cmd` to close it. Startup logs are in `.hcu/`.
 
 ## Try the demo
+
+The [use-case rehearsal guide](docs/demo-rehearsal.md) walks through a first maintenance request, a shift handoff, a workload briefing, and desktop navigation.
 
 | Say | Check |
 | --- | --- |

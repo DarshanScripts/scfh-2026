@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { randomUUID } from 'node:crypto';
 import { cli, defineAgent, inference, ServerOptions, voice } from '@livekit/agents';
 import { AvatarSession } from '@livekit/agents-plugin-bey';
 import { LLM } from '@livekit/agents-plugin-anthropic';
@@ -9,6 +10,7 @@ import { createWorkflowTools } from './workflow-tools.mjs';
 import { listenForAvatarAudio } from './workflow-playback.mjs';
 import { createOnboardingAnswers } from './onboarding-answer.mjs';
 import { avatarModeAttribute, voiceFallback } from './avatar-mode.mjs';
+import { DESKTOP_CONTROL_RPC } from './desktop-control-rpc.mjs';
 
 const workerName = process.env.LIVEKIT_AGENT_NAME?.trim() || 'handbook-windows';
 const language = process.env.AGENT_LANGUAGE || 'en';
@@ -21,11 +23,31 @@ export default defineAgent({
     const settings = anthropicSettings();
     const { model } = settings;
     const client = await createAnthropicClient(settings);
-    const desktopGuard = createDesktopActionGuard();
+    let desktopTurn;
+    async function sendDesktopState(message) {
+      const operator = [...ctx.room.remoteParticipants.values()].find(({ identity }) => identity.startsWith('operator-'));
+      if (!operator) return;
+      const reply = await ctx.room.localParticipant.performRpc({
+        method: DESKTOP_CONTROL_RPC,
+        destinationIdentity: operator.identity,
+        payload: JSON.stringify(message),
+        responseTimeout: 3000,
+      });
+      if (reply !== 'ok') throw new Error('The voice workspace rejected the desktop state change.');
+    }
+    const desktopGuard = createDesktopActionGuard({
+      async setDesktopActive(active) {
+        if (!active) return sendDesktopState({ type: 'stop' });
+        const turn = desktopTurn;
+        await sendDesktopState({ type: 'start', id: turn?.id, request: turn?.request ?? '' });
+        if (turn) turn.usedDesktop = true;
+      },
+    });
     const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
     let avatarAudio;
     const workflows = createWorkflowTools({ room: ctx.room, getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough });
     ctx.addShutdownCallback(() => workflows.close());
+    ctx.addShutdownCallback(() => desktopGuard.finish());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
       stt: new inference.STT({ model: 'deepgram/nova-3', language }),
@@ -33,17 +55,22 @@ export default defineAgent({
       tts: new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
       tools: [createDesktopTools({ client, model, guard: desktopGuard }), onboarding.tool, ...workflows.tools],
     });
-    async function beginUserTurn() {
+    session.on(voice.AgentSessionEventTypes.AgentStateChanged, ({ newState }) => {
+      if (newState === 'listening' || newState === 'speaking') void desktopGuard.finish();
+    });
+    async function beginUserTurn(request) {
       workflows.interrupt();
       desktopGuard.beginTurn();
+      desktopTurn = { id: randomUUID(), request: request?.trim().slice(0, 1000) || '' };
       await onboarding.beginTurn();
     }
     const agent = voice.Agent.create({
       instructions: desktopInstructions(language, {
         onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
       }),
-      onUserTurnCompleted: beginUserTurn,
+      onUserTurnCompleted: (_chat, message) => beginUserTurn(message.textContent),
       async *llmNode(ctx, chatCtx, toolCtx, settings) {
+        const current = desktopTurn;
         const stream = await voice.Agent.default.llmNode(ctx.agent, chatCtx, toolCtx, settings);
         if (!stream) return;
 
@@ -67,7 +94,13 @@ export default defineAgent({
             yield chunk;
           }
         }
-        if (!usedTools && reply.trim()) yield reply;
+        if (!usedTools) {
+          await desktopGuard.finish();
+          if (current === desktopTurn && current?.usedDesktop && reply.trim()) {
+            void sendDesktopState({ type: 'result', id: current.id, text: reply.trim().slice(0, 1000) }).catch(() => {});
+          }
+          if (reply.trim()) yield reply;
+        }
       },
     });
 
@@ -101,7 +134,7 @@ export default defineAgent({
       inputOptions: {
         async textInputCallback(activeSession, event) {
           activeSession.interrupt();
-          await beginUserTurn();
+          await beginUserTurn(event.text);
           activeSession.generateReply({ userInput: event.text });
         },
       },

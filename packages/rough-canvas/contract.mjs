@@ -8,6 +8,7 @@ export const MAX_LABEL = 52;
 export const MAX_ACTIONS = 2;
 export const nodeIdPattern = '^[a-z][a-z0-9-]{0,23}$';
 export const MAX_PAYLOAD = 4096;
+export const SYMBOLS = ['ticket', 'document', 'check', 'search', 'person', 'handoff', 'queue', 'alert', 'clock', 'folder'];
 export const COLORS = {
   ink: '#223b37',
   teal: '#167d69',
@@ -67,6 +68,7 @@ export const lessonSchema = object({
               },
             }),
             mark('label', { x, y, text: str(MAX_LABEL) }, false, { fontSize: int(10, 26) }),
+            mark('symbol', { x, y, name: { type: 'string', enum: SYMBOLS }, size: int(14, 64) }),
           ],
         },
       },
@@ -76,6 +78,11 @@ export const lessonSchema = object({
 });
 
 export function fitsScene(mark) {
+  if (mark.kind === 'symbol') {
+    const radius = Math.ceil(mark.size / 2);
+    return mark.x - radius >= 20 && mark.x + radius <= WIDTH - 20 &&
+      mark.y - radius >= 20 && mark.y + radius <= HEIGHT - 20;
+  }
   if (['rectangle', 'ellipse', 'diamond'].includes(mark.kind)) {
     return mark.x + mark.width <= WIDTH - 20 && mark.y + mark.height <= HEIGHT - 20;
   }

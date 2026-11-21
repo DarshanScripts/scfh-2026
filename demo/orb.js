@@ -1,6 +1,5 @@
-import { mountRoughPanel } from '/rough/panel.mjs';
 import { CLOSE_TOPIC, DRAW_RPC, MAX_PAYLOAD } from '/rough/contract.mjs';
-import { exportPng } from '/rough/export.mjs';
+import { DESKTOP_CONTROL_RPC } from '/desktop-control-rpc.mjs';
 const avatarModeAttribute = 'scfh.avatar.mode';
 
 const { createLocalAudioTrack, ParticipantKind, Room, RoomEvent, Track } = LivekitClient;
@@ -9,11 +8,15 @@ const status = document.querySelector('#status');
 const toggle = document.querySelector('#voice-toggle');
 const avatar = document.querySelector('#avatar');
 let activeCall;
-const diagram = document.querySelector('#diagram');
+const workspace = window.voiceWorkspace;
 const answerTemplate = document.querySelector('#answer-template');
 const transcript = document.querySelector('#transcript');
 const expand = document.querySelector('#expand');
 const collapse = document.querySelector('#collapse');
+const recap = document.querySelector('#desktop-recap');
+const desktopRequest = document.querySelector('#desktop-request');
+const desktopResult = document.querySelector('#desktop-result');
+const showCanvas = document.querySelector('#show-canvas');
 const uuid = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 let answerModule;
 let mode = 'sidebar';
@@ -21,12 +24,11 @@ let modeSequence = 0;
 let canvasRun;
 document.body.dataset.mode = mode;
 
-async function setMode(next) {
+async function setMode(next, { manual = false } = {}) {
   const sequence = ++modeSequence;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (next !== 'sidebar' && document.fullscreenElement) await document.exitFullscreen();
   if (mode === 'sidebar' && next !== 'sidebar') {
-    document.body.style.setProperty('--sidebar-width', orb.clientWidth + 'px');
     if (!reducedMotion) {
       const transition = orb.animate(
         [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(44px)', opacity: 0 }],
@@ -39,46 +41,39 @@ async function setMode(next) {
   if (sequence !== modeSequence) return;
   mode = next;
   document.body.dataset.mode = mode;
-  diagram.hidden = mode !== 'canvas';
   expand.hidden = mode !== 'collapsed';
-  await window.voiceWorkspace?.setMode(mode);
+  await workspace?.setMode(mode);
   if (sequence !== modeSequence) return;
   if (mode === 'sidebar') {
     if (!reducedMotion) orb.animate(
       [{ transform: 'translateX(36px)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }],
       { duration: 230, easing: 'ease-out' },
     );
-    collapse.focus({ preventScroll: true });
+    if (manual) collapse.focus({ preventScroll: true });
   }
   if (mode === 'collapsed') expand.focus({ preventScroll: true });
 }
-collapse.onclick = () => void setMode('collapsed');
-expand.onclick = () => void setMode('sidebar');
+collapse.onclick = () => void setMode('collapsed', { manual: true });
+expand.onclick = () => void setMode('sidebar', { manual: true });
 
-const canvas = mountRoughPanel(diagram, {
-  async onClose(id) {
-    const attempt = activeCall;
-    if (canvasRun === id) {
-      canvasRun = undefined;
-      await setMode('sidebar');
-    }
-    if (!attempt?.agentIdentity || attempt !== activeCall) return;
-    await attempt.room.localParticipant.publishData(new TextEncoder().encode(id), {
-      reliable: true, topic: CLOSE_TOPIC, destinationIdentities: [attempt.agentIdentity],
-    });
-  },
-});
-const saveCanvas = document.createElement('button');
-saveCanvas.type = 'button';
-saveCanvas.textContent = 'Save as PNG';
-saveCanvas.hidden = true;
-diagram.querySelector('header').insertBefore(saveCanvas, diagram.querySelector('button'));
-saveCanvas.onclick = async () => {
-  saveCanvas.disabled = true;
-  try { await exportPng(diagram.querySelector('svg')); }
-  catch { diagram.querySelector('footer p').textContent = 'The PNG could not be saved. Try again.'; }
-  finally { saveCanvas.disabled = false; }
+function setCanvasRun(id) {
+  canvasRun = id;
+  showCanvas.hidden = true;
+  document.body.toggleAttribute('data-canvas-open', Boolean(id));
+}
+showCanvas.onclick = async () => {
+  if (await workspace?.showCanvas()) showCanvas.hidden = true;
 };
+
+workspace?.onCanvasClosed((id) => {
+  const attempt = activeCall;
+  if (canvasRun !== id) return;
+  setCanvasRun(undefined);
+  if (!attempt?.agentIdentity) return;
+  void attempt.room.localParticipant.publishData(new TextEncoder().encode(id), {
+    reliable: true, topic: CLOSE_TOPIC, destinationIdentities: [attempt.agentIdentity],
+  }).catch(() => {});
+});
 
 async function showAnswer(attempt, event) {
   try {
@@ -243,10 +238,11 @@ function finish(attempt, message, state = 'idle') {
   attempt.microphone?.stop();
   switchMedia(attempt);
   if (canvasRun) {
-    canvasRun = undefined;
-    canvas.dismiss();
-    void setMode('sidebar');
+    void workspace.updateCanvas({ type: 'dismiss', id: canvasRun });
+    setCanvasRun(undefined);
   }
+  void workspace?.setDesktopActive(false);
+  if (attempt.desktopActive) desktopResult.textContent = 'Call ended.';
   void attempt.room.disconnect().catch(() => {});
   setStatus(state, message);
 }
@@ -305,25 +301,58 @@ toggle.onclick = async () => {
   session.registerTextStreamHandler('lk.transcription', (reader, participant) => {
     void readTranscript(attempt, reader, participant);
   });
-  session.registerRpcMethod(DRAW_RPC, async ({ callerIdentity, payload }) => {
-    if (activeCall !== attempt || callerIdentity !== attempt.agentIdentity || payload.length > MAX_PAYLOAD) return 'invalid';
+  session.registerRpcMethod(DESKTOP_CONTROL_RPC, async ({ callerIdentity, payload }) => {
+    if (activeCall !== attempt || callerIdentity !== attempt.agentIdentity || payload.length > 7000 || !workspace) return 'invalid';
     let message;
     try { message = JSON.parse(payload); } catch { return 'invalid'; }
-    if (message?.type === 'dismiss') {
-      if (message.id !== canvasRun) return 'closed';
-      canvasRun = undefined;
-      canvas.dismiss();
-      await setMode('sidebar');
+    if (message?.type === 'result') {
+      if (!attempt.desktopId || message.id !== attempt.desktopId ||
+          typeof message.text !== 'string' || !message.text.trim() || message.text.length > 1000) return 'invalid';
+      desktopResult.textContent = message.text;
       return 'ok';
     }
-    const result = await canvas.receive(message);
-    if (result === 'ok' && message.type === 'begin') saveCanvas.hidden = true;
-    if (result === 'ok' && message.type === 'completed') saveCanvas.hidden = false;
-    if (result === 'ok' && message.type === 'begin' && attempt === activeCall) {
-      canvasRun = message.id;
-      await setMode('canvas');
-      diagram.querySelector('[aria-label="Close canvas"]')?.focus();
+    if (message?.type === 'start') {
+      if ((message.id !== undefined && !uuid.test(message.id)) ||
+          typeof message.request !== 'string' || message.request.length > 1000) return 'invalid';
+      if (document.fullscreenElement) await document.exitFullscreen();
+      if (activeCall !== attempt) return 'closed';
+      if (!await workspace.setDesktopActive(true)) return 'invalid';
+      attempt.desktopId = message.id;
+      attempt.desktopActive = true;
+      desktopRequest.textContent = message.request || attempt.userSpeech?.entry.content.textContent || '';
+      desktopResult.textContent = 'Using the desktop…';
+      recap.hidden = false;
+      return 'ok';
     }
+    if (message?.type !== 'stop') return 'invalid';
+    if (!attempt.desktopActive) return 'ok';
+    if (mode === 'collapsed') await setMode('sidebar');
+    if (activeCall !== attempt) return 'closed';
+    if (!await workspace.setDesktopActive(false)) return 'invalid';
+    attempt.desktopActive = false;
+    if (desktopResult.textContent === 'Using the desktop…') desktopResult.textContent = 'Desktop control ended.';
+    showCanvas.hidden = !canvasRun;
+    return 'ok';
+  });
+  session.registerRpcMethod(DRAW_RPC, async ({ callerIdentity, payload }) => {
+    if (activeCall !== attempt || callerIdentity !== attempt.agentIdentity || payload.length > MAX_PAYLOAD || !workspace) return 'invalid';
+    let message;
+    try { message = JSON.parse(payload); } catch { return 'invalid'; }
+    if (!message || typeof message.id !== 'string') return 'invalid';
+    if (message.type === 'begin') {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      if (mode === 'collapsed') await setMode('sidebar');
+    }
+    if (attempt !== activeCall) return 'closed';
+    const result = await workspace.updateCanvas(message);
+    if (result === 'ok' && message.type === 'begin') {
+      if (attempt !== activeCall) {
+        await workspace.updateCanvas({ type: 'dismiss', id: message.id });
+        return 'closed';
+      }
+      setCanvasRun(message.id);
+    }
+    if (result === 'ok' && message.type === 'dismiss' && message.id === canvasRun) setCanvasRun(undefined);
     return result;
   });
   let onboardingReads = Promise.resolve();

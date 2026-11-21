@@ -8,6 +8,20 @@ const colors = new Map([
 const clamp = (value, min, max) => Math.round(Math.min(max, Math.max(min, value)));
 const trimText = (value, limit) => value.trim().length > limit ? value.trim().slice(0, limit - 1).trimEnd() + '…' : value.trim();
 
+function symbolFor(card, color) {
+  const text = card.label.text;
+  if (card.type === 'ellipse') return 'clock';
+  if (color === 'amber' || color === 'rose') return 'alert';
+  if (/duplicat|search|find/i.test(text)) return 'search';
+  if (/desk lead|owner/i.test(text)) return 'person';
+  if (/queue|assign|rout/i.test(text)) return 'queue';
+  if (/handoff|send|notify/i.test(text) || color === 'teal') return 'handoff';
+  if (/confirm|check|validat|review/i.test(text)) return 'check';
+  if (/guide|source|document/i.test(text)) return 'document';
+  if (/folder|files/i.test(text)) return 'folder';
+  return 'ticket';
+}
+
 function fitCardLabel(text, width, height, kind) {
   const words = text.trim().split(/\s+/u);
   const usableWidth = width * (kind === 'diamond' ? .71 : kind === 'ellipse' ? .78 : .9);
@@ -53,13 +67,22 @@ export function workflowToLesson({ title, narration, elements, nodes, links }) {
     const group = groups.get(card.id);
     const width = x(card.x + card.width) - x(card.x);
     const height = y(card.y + card.height) - y(card.y);
-    const kind = ['diamond', 'ellipse'].includes(card.type) ? card.type : 'rectangle';
-    const { fontSize, lines } = fitCardLabel(card.label.text, width, height, kind);
+    const isDecision = card.type === 'diamond';
+    const useSymbol = !isDecision && height >= 21 && width >= 65;
+    const symbolSize = clamp(height * .76, 14, 40);
+    const labelOffset = useSymbol ? symbolSize + 6 : 0;
+    const { fontSize, lines } = fitCardLabel(card.label.text, width - labelOffset, height, card.type);
     const color = colors.get(card.strokeColor) ?? 'blue';
     const centerX = x(card.x + card.width / 2);
     const centerY = y(card.y + card.height / 2);
-    const marks = [{ kind, x: x(card.x), y: y(card.y), width, height, group, color },
-      ...lines.map((text, line) => label(centerX, Math.round(centerY + (line - (lines.length - 1) / 2) * fontSize), text, fontSize, group))];
+    const marks = [];
+    if (isDecision) marks.push({ kind: 'diamond', x: x(card.x), y: y(card.y), width, height, group, color });
+    if (useSymbol) marks.push({
+      kind: 'symbol', name: symbolFor(card, color), x: x(card.x) + Math.ceil(symbolSize / 2),
+      y: centerY, size: symbolSize, group, color,
+    });
+    marks.push(...lines.map((text, line) => label(centerX + Math.floor(labelOffset / 2),
+      Math.round(centerY + (line - (lines.length - 1) / 2) * fontSize), text, fontSize, group)));
     if (i === 0) {
       const laneWidth = cards[0].width * scale;
       const laneFont = clamp(laneWidth * .09, 10, 20);

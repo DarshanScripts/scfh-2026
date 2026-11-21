@@ -5,7 +5,7 @@ body { margin: 0; height: 100vh; overflow: hidden; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, [data-answer-part="source-body"]:focus-visible { outline: 2px solid #55627a; outline-offset: 2px; }
 #sidebar { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; margin-left: auto; border-left: 1px solid #dadee5; }
-body:not([data-mode="sidebar"]) #sidebar { position: absolute; right: 0; width: var(--sidebar-width); visibility: hidden; pointer-events: none; }
+body[data-mode="collapsed"] #sidebar { display: none; }
 .stage { display: grid; background: #fff; border-bottom: 1px solid #e1e4eb; min-width: 0; }
 .stage-controls { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .55rem 1rem; font-weight: 650; }
 .stage-controls button, #expand { min-width: 36px; min-height: 36px; font-size: 21px; line-height: 1; padding: .2rem; border: 1px solid #e1e4eb; background: #f5f7f8; border-radius: .8rem; }
@@ -26,6 +26,12 @@ body:not([data-mode="sidebar"]) #sidebar { position: absolute; right: 0; width: 
 #voice-toggle[data-in-call] .call-handset { transform: rotate(135deg); }
 .conversation { display: flex; min-height: 0; flex-direction: column; padding: .9rem 1rem .5rem; gap: .6rem; overflow: hidden; }
 .conversation h2 { margin: 0; font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
+#desktop-recap { flex: 0 0 auto; max-height: 28vh; overflow: auto; padding: .65rem .75rem; border: 1px solid #bbcfc6; border-radius: .75rem; background: #edf5f0; }
+.recap-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .25rem .5rem; }
+#desktop-recap h2 { font-size: .78rem; color: #36564a; }
+#desktop-recap p { margin: .28rem 0 0; overflow-wrap: anywhere; font-size: .9rem; }
+#desktop-request { font-weight: 600; }
+#show-canvas { padding: .14rem .5rem; border: 1px solid #bbcfc6; border-radius: .45rem; background: #fff; font-size: .78rem; }
 #transcript p, [data-answer-part="answer"], [data-answer-part="source-status"] { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 #empty-transcript { color: #596171; }
 .transcript-entry strong { display: block; color: #4e5769; font-size: .78rem; margin-bottom: .12rem; }
@@ -40,7 +46,7 @@ body:not([data-mode="sidebar"]) #sidebar { position: absolute; right: 0; width: 
 .pdf-highlight { position: absolute; background: #ffc61f66; pointer-events: none; }
 .word-page { background: white; margin: .4rem; padding: .65rem; }
 #expand { height: 100%; width: 100%; background: #f5f7f8; color: #242833; }
-#diagram { position: absolute; inset: 0; }
+body[data-canvas-open] [data-answer-part="source-expand"] { display: none; }
 
 #transcript { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: .8rem; padding: .15rem .35rem .75rem .1rem; }
 .transcript-entry { flex: none; align-self: flex-start; width: fit-content; max-width: 93%; padding: .7rem .95rem; background: #fff; border: 1px solid #e1e4eb; border-radius: 1.15rem; box-shadow: 0 2px 6px #232b400a; }

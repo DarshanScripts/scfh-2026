@@ -9,7 +9,7 @@ let canvasWindow;
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
   const win = canvasWindow = new BrowserWindow({
-    width: 760, height: 650, title: 'Workflow Canvas', show: false,
+    width: 760, height: 650, title: 'Canvas', show: false,
     webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, partition: 'canvas-preview' },
   });
   win.once('closed', () => { canvasWindow = undefined; });
@@ -27,6 +27,6 @@ app.whenReady().then(async () => {
   win.webContents.on('will-redirect', (event) => event.preventDefault());
   await win.loadURL(url.href);
   win.show();
-  console.log('Workflow Canvas window opened.');
+  console.log('Canvas window opened.');
 }).catch((error) => { console.error(error.message); app.exit(1); });
 app.on('window-all-closed', () => app.quit());
