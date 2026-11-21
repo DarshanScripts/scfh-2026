@@ -82,7 +82,7 @@ room.registerTextStreamHandler('scfh.onboarding.v1', async (reader) => {
 room.on(RoomEvent.TrackSubscribed, async (track, _publication, participant) => {
   const avatarTrack = Boolean(participant.attributes['lk.publish_on_behalf']);
   if ((avatarEnabled && !avatarFellBack()) !== avatarTrack) return;
-  if (avatarTrack && track.kind === TrackKind.KIND_VIDEO) avatarVideo = true;
+  if (avatarTrack && track.kind === TrackKind.KIND_VIDEO && participant.identity === 'bey-avatar-agent') avatarVideo = true;
   if (track.kind !== TrackKind.KIND_AUDIO) return;
   try {
     for await (const frame of new AudioStream(track)) {
@@ -139,6 +139,8 @@ try {
     ['start', 'stop', 'result'].includes(JSON.parse(payload).type) ? 'ok' : 'invalid');
   const track = LocalAudioTrack.createAudioTrack('test-microphone', source);
   await room.localParticipant.publishTrack(track, { source: TrackSource.SOURCE_MICROPHONE });
+  const size = rate / 50;
+  await source.captureFrame(new AudioFrame(new Int16Array(size), rate, 1, size));
   await waitFor(() => [...room.remoteParticipants.values()].some((p) => p.attributes['lk.agent.state'] === 'listening'),
     'the LiveKit agent to start listening', avatarEnabled ? 50_000 : 25_000);
   console.log('PASS The menu created a LiveKit room, routed the worker, and accepted a microphone track.');
@@ -147,7 +149,6 @@ try {
   // Let the Windows input gate settle before requesting real desktop input.
   if (!walkthrough && !qa) await delay(11_500);
 
-  const size = rate / 50;
   // Start and end with silence so the agent's VAD sees a complete speech turn.
   const input = new Int16Array(rate / 2 + pcm.length + rate * 2);
   input.set(pcm, rate / 2);
@@ -201,6 +202,7 @@ try {
   }
   await waitFor(() => outgoingAudio && replyTranscript.trim(), 'spoken confirmation audio', 45_000);
   const usingAvatar = avatarEnabled && !avatarFellBack();
+  if (requireAvatar) assert(usingAvatar, 'Beyond Presence switched to voice only.');
   if (usingAvatar) await waitFor(() => avatarVideo, 'Beyond Presence video', 10_000);
   if (avatarEnabled && !usingAvatar) console.log('PASS The room continued with the configured voice-only fallback.');
   console.log('PASS The agent returned audible speech' + (usingAvatar ? ' and Beyond Presence video.' : '.'));

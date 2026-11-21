@@ -18,7 +18,7 @@ app.whenReady().then(async () => {
     const area = (screen.getAllDisplays().find((item) => item.id === display.id) || screen.getPrimaryDisplay()).workArea;
     const sidebarWidth = Math.round(area.width * 0.3);
     if (mode === 'collapsed') return { x: area.x + area.width - 42, y: area.y + 16, width: 42, height: 56 };
-    if (mode === 'canvas') return { x: area.x, y: area.y, width: Math.round(area.width * 0.5), height: area.height };
+    if (mode === 'canvas') return { x: area.x, y: area.y, width: area.width - sidebarWidth, height: area.height };
     return { x: area.x + area.width - sidebarWidth, y: area.y, width: sidebarWidth, height: area.height };
   }
   let mode = 'sidebar';

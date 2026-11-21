@@ -289,9 +289,10 @@ toggle.onclick = async () => {
       thinking: 'Working…',
       speaking: 'Speaking…',
     }[ready ? agentState : ''];
-    const waiting = usingAvatar ? 'Waiting for the avatar…' : 'Waiting for the agent…';
-    const description = message || waiting;
-    setStatus(message ? agentState : 'connecting', attempt.voiceFallback ? 'Avatar unavailable. ' + description : description);
+    const waiting = usingAvatar ? 'Waiting for the avatar…'
+      : attempt.voiceFallback ? 'Starting voice only…' : 'Waiting for the agent…';
+    const prefix = attempt.voiceFallback ? 'Beyond Presence video unavailable. ' : '';
+    setStatus(message ? agentState : 'connecting', prefix + (message || waiting));
   };
 
   session.on(RoomEvent.ParticipantAttributesChanged, updateStatus);

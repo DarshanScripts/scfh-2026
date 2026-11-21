@@ -17,6 +17,7 @@ import { DESKTOP_CONTROL_RPC } from './desktop-control-rpc.mjs';
 const workerName = process.env.LIVEKIT_AGENT_NAME?.trim() || 'handbook-windows';
 const language = process.env.AGENT_LANGUAGE || 'en';
 const avatarEnabled = process.env.ENABLE_AVATAR === '1';
+const livekitVoice = process.env.LIVEKIT_VOICE_ID?.trim();
 const cartesiaModel = process.env.CARTESIA_TTS_MODEL?.trim() || 'sonic-3.6';
 const cartesiaVoice = process.env.CARTESIA_VOICE_ID?.trim() || '9626c31c-bec5-4cca-baa8-f8ba9e84c8bc';
 
@@ -62,9 +63,13 @@ export default defineAgent({
     ctx.addShutdownCallback(() => desktopGuard.finish());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
-      stt: new inference.STT({ model: 'deepgram/nova-3', language }),
+      stt: new inference.STT({ model: 'deepgram/nova-3', language: process.env.STT_LANGUAGE?.trim() || 'multi' }),
       llm: new LLM({ client, model, parallelToolCalls: false }),
-      tts: new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
+      tts: new inference.TTS({
+        model: livekitVoice ? 'google/gemini-3.8-flash-lite-tts' : 'cartesia/' + cartesiaModel,
+        voice: livekitVoice || cartesiaVoice,
+        language,
+      }),
       tools: [createDesktopTools({ client, model, guard: desktopGuard }), onboarding.tool, ...workflows.tools],
     });
     session.on(voice.AgentSessionEventTypes.AgentStateChanged, ({ newState }) => {
@@ -79,6 +84,7 @@ export default defineAgent({
     const agent = voice.Agent.create({
       instructions: desktopInstructions(language, {
         harbour,
+        projectFolder: fileURLToPath(new URL('./', import.meta.url)),
         harbourMap: harbour ? harbourWorkspaceMap(harbourFolder, process.env.HARBOUR_DRIVE_FOLDER_URL) : undefined,
         onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
       }),
@@ -126,8 +132,8 @@ export default defineAgent({
 
     await ctx.connect();
     if (avatarEnabled) {
-      // A future Anam adapter belongs here and can publish to the same room.
       const apiKey = process.env.BEYOND_PRESENCE_API_KEY?.trim() || process.env.BEY_API_KEY?.trim();
+      const audioOutput = session.output.audio;
       let avatar;
       try {
         if (!apiKey) throw new Error('Beyond Presence key is missing.');
@@ -139,6 +145,7 @@ export default defineAgent({
         await avatar.start(session, ctx.room);
       } catch {
         await avatar?.aclose().catch(() => {});
+        session.output.audio = audioOutput;
         avatar = undefined;
         console.warn('Beyond Presence did not start. Continuing with voice only.');
         await ctx.room.localParticipant.setAttributes({ [avatarModeAttribute]: voiceFallback });

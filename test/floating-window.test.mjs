@@ -207,10 +207,10 @@ test('the avatar and canvas stay side by side and yield the desktop during compu
       return { sidebar, canvas, area: screen.getDisplayMatching(sidebar).workArea };
     });
     const { sidebar, canvas: drawing, area } = layout;
-    assert.deepEqual(drawing, { x: area.x, y: area.y, width: Math.round(area.width * .5), height: area.height });
+    assert.deepEqual(drawing, { x: area.x, y: area.y, width: area.width - sidebar.width, height: area.height });
     assert.equal(sidebar.width, Math.round(area.width * .3));
     assert.equal(sidebar.x + sidebar.width, area.x + area.width);
-    assert(drawing.x + drawing.width < sidebar.x);
+    assert.equal(drawing.x + drawing.width, sidebar.x);
     assert.equal(await send('agent', { type: 'step', id: begin.id, index: 0, narration: 'Check the source.', marks: [
       { kind: 'symbol', x: 130, y: 140, name: 'document', size: 36, group: 'source' },
       { kind: 'label', x: 180, y: 140, text: 'Source', group: 'source' },
@@ -302,7 +302,7 @@ test('an unavailable avatar keeps the call open and plays the assigned agent aud
     await page.locator('main[data-state="listening"]').waitFor({ timeout: 5_000 });
     assert.equal(await page.locator('#avatar').isHidden(), true);
     assert.deepEqual(await page.locator('audio').evaluateAll((nodes) => nodes.map((node) => node.dataset.owner)), ['agent']);
-    assert.equal(await page.locator('#status').textContent(), 'Avatar unavailable. Listening. Say a command.');
+    assert.equal(await page.locator('#status').textContent(), 'Beyond Presence video unavailable. Listening. Say a command.');
     await page.getByRole('button', { name: 'End call' }).click();
   }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: true } });
 });
