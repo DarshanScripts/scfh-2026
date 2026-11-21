@@ -39,6 +39,7 @@ export function createOnboardingAnswers(room, base, { harbour = false } = {}) {
   let pending;
   let workflowStepId;
   let previousQuery;
+  let lastGroundedAnswer;
 
   const context = () => harbour ? { workflowStepId, previousQuery } : undefined;
   function onWorkflowStep(stepId, workflowId) {
@@ -77,7 +78,17 @@ export function createOnboardingAnswers(room, base, { harbour = false } = {}) {
         const answer = await fetchResult(base, 'answer', '/api/question', query, id, requestId, abortSignal, context());
         if (!current()) return;
         await publish({ type: 'answer', turnId: id, requestId, answer });
-        if (harbour && answer.outcome !== 'insufficient') previousQuery = query.trim();
+        if (!current()) return;
+        if (harbour && answer.claims.length) {
+          previousQuery = query.trim();
+          const sources = [...new Set(answer.citations.map(citation => {
+            const { pageLabel, format, page } = citation.locator;
+            const location = format === 'pdf' && pageLabel && pageLabel !== String(page)
+              ? `p. ${pageLabel} (PDF ${page})` : pageLabel || (format === 'pdf' ? `p. ${page}` : '');
+            return [citation.title, location].filter(Boolean).join(' · ');
+          }))];
+          lastGroundedAnswer = { question: previousQuery, answer: answer.text, sources };
+        }
         text = answer.text;
       } catch {
         if (!current()) return;
@@ -107,5 +118,5 @@ export function createOnboardingAnswers(room, base, { harbour = false } = {}) {
     }
     return result;
   }
-  return { beginTurn, tool, getWalkthrough, onWorkflowStep };
+  return { beginTurn, tool, getWalkthrough, onWorkflowStep, latestEvidence: () => lastGroundedAnswer };
 }
