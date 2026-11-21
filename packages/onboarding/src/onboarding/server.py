@@ -74,8 +74,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(content)))
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
-        self.end_headers()
-        self.wfile.write(content)
+        try:
+            self.end_headers()
+            self.wfile.write(content)
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
 
     def send_result(self, result: StrictModel) -> None:
         self.send_payload(200, result.model_dump_json().encode("utf-8"), "application/json")

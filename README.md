@@ -5,35 +5,38 @@ Smart City Future Hackathon 2026
 
 The worker controls native apps and browsers on the signed-in Windows desktop through [CursorTouch Windows-MCP](https://github.com/CursorTouch/Windows-MCP), pinned to version 0.8.9. LiveKit Inference provides Deepgram speech recognition and streaming Cartesia Sonic 3.6. Set the LiveKit project credentials in `.env` to use both. The worker also reads `ANTHROPIC_API_KEY`, `LLM_MODEL`, and `REASONING_EFFORT` from `.env` before checking the process environment. Conversation and screenshot interpretation both use the Anthropic Messages API. `LLM_MODEL` defaults to `claude-sonnet-5-5`, and `REASONING_EFFORT` defaults to `none`. With Sonnet 5.5, `none` turns off thinking before the response and allows short thinking updates between tool calls.
 
-### Use the floating voice agent
+### Use the desktop sidebar
 
-The desktop orb creates a room in your LiveKit Cloud project when you click its microphone. The worker runs on your Windows PC and uses LiveKit Inference for speech. To select another voice, set `CARTESIA_VOICE_ID`.
+Run `start.cmd` on Windows, or `npm run start:sidebar` from this checkout. Set
+`ENABLE_AVATAR=1` and configure Beyond Presence to show the live avatar. Select **Start call**
+to open a LiveKit session. The sidebar sits on the right edge of the usable display.
+The collapse button folds it into a small tab while the call continues. Select **End call**
+to release the microphone. The launcher chooses a free local port by default. Set
+`DEMO_PORT=4321` if a local integration needs a fixed address, such as the voice room test.
+On Windows, use `stop.cmd` or **Alt+F4** to exit, or
+`restart.cmd` to reload settings.
 
-1. Run `start.cmd` in an unlocked Windows desktop session. A floating orb appears near the bottom right. Drag its rim to move it.
-2. Click the microphone in the orb. When the rim turns green, say **“Open Calculator.”** Hover over the center to see the call status.
-3. Click the stop square to disconnect and release the microphone. Use `stop.cmd` or **Alt+F4** while the orb has focus to close it, or `restart.cmd` to reload settings. If startup fails, see `.hcu/demo.error.log` and `.hcu/demo.log`.
+Ask the agent to draw a chart or walk through a process. The Rough.js canvas takes focus
+as a separate view in the same Electron window. **Close canvas** restores the transcript
+and any open citation. Drawing waits for the existing avatar playback signal.
 
-English is the default for recognition and replies. If the agent and room are already running, an automated Windows check can send a recorded command through the same LiveKit microphone track, verify a real click in a temporary app, and check the returned audio. Run `npm run test:voice` in a second terminal.
+### Open cited answers
 
-Run `npm run test:orb` to check the floating window and call cancellation with a simulated microphone.
+Prepare the onboarding service from this checkout once.
 
-See [Windows acceptance](docs/windows-acceptance.md) for the baseline audit and the cursor and avatar review steps.
-
-### Try cited onboarding answers
-
-Prepare the sample Facilities Service Desk documents once from the repo root, then run `restart.cmd` as usual. This builds the companion panel and prepares the Python service that starts with the orb.
-
-```powershell
-Push-Location packages/onboarding
+```sh
+cd packages/onboarding
 uv sync --locked
-npx.cmd --yes bun@1.4.5 install --frozen-lockfile
-npx.cmd --yes bun@1.4.5 run build
-Pop-Location
+bun install --frozen-lockfile
+bun run build
 ```
 
-Start a call and ask “Where’s the guide for logging a maintenance request, and what do I need before I open a ticket?” The Facilities Onboarding window displays the spoken answer. Click **Intake checklist** to open the highlighted PDF passage on page 2. Ask “A maintenance ticket still has no owner. When should I follow up, and who do I tell?” for the Word citation. Ask “What budget do we have for repairs?” to check the reply for missing evidence. The integration uses reviewed demo fixtures. The standalone package documents the separate Qdrant mode.
-
-Run `node --test test/onboarding-answer.test.mjs` to verify the answer and citation panel locally with the fixture service and simulated voice events.
+Ask “Where’s the guide for logging a maintenance request, and what do I need before I open a
+ticket?” Select **Intake checklist** to open page 2 in the sidebar. The document scrolls to the
+verified highlight. If an exact highlight is unavailable, the viewer shows the nearest location
+and explains the gap. The default source is the demo fixtures. To use an existing Qdrant index,
+set `ONBOARDING_KNOWLEDGE=qdrant` and follow the setup in
+[the onboarding package](packages/onboarding/README.md).
 
 ### Setup
 

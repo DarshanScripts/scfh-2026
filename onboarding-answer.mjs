@@ -54,7 +54,7 @@ export function createOnboardingAnswers(room, base) {
         const response = await fetch(new URL('/api/question', base), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId: id, requestId }),
-          signal: AbortSignal.any([abortSignal, AbortSignal.timeout(8000)]),
+          signal: AbortSignal.any([abortSignal, AbortSignal.timeout(45_000)]),
         });
         if (!response.ok) throw new Error('The onboarding service could not answer.');
         const answer = await response.json();

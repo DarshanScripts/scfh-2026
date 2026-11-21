@@ -28,27 +28,37 @@ export default defineAgent({
     const settings = anthropicSettings();
     const { model } = settings;
     const client = await createAnthropicClient(settings);
-    const desktopGuard = createDesktopActionGuard();
+    const desktopGuard = process.platform === 'win32' ? createDesktopActionGuard() : undefined;
     const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
     let avatarAudio;
-    const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal });
+    const workflows = createWorkflowTools({ room: ctx.room, getAvatarAudio: () => avatarAudio?.signal });
     ctx.addShutdownCallback(() => workflows.close());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
       stt: new inference.STT({ model: 'deepgram/nova-3', language }),
       llm: new LLM({ client, model, parallelToolCalls: false }),
       tts: new inference.TTS({ model: 'cartesia/' + cartesiaModel, voice: cartesiaVoice, language }),
-      tools: [createDesktopTools({ client, model, guard: desktopGuard }), onboarding.tool, ...workflows.tools],
+      tools: [
+        ...(desktopGuard ? [createDesktopTools({ client, model, guard: desktopGuard })] : []),
+        onboarding.tool, ...workflows.tools,
+      ],
     });
     async function beginUserTurn() {
       workflows.interrupt();
-      desktopGuard.beginTurn();
+      desktopGuard?.beginTurn();
       await onboarding.beginTurn();
     }
     const agent = voice.Agent.create({
-      instructions: desktopInstructions(language, {
-        onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
-      }),
+      instructions: desktopGuard
+        ? desktopInstructions(language, {
+          onboardingFolder: fileURLToPath(new URL('./packages/onboarding/src/onboarding/fixtures/', import.meta.url)),
+        })
+        : `You are the Facilities Service Desk voice assistant. Reply in ${language}.
+Use answer_onboarding_question for questions about approved onboarding documents and preserve evidence gaps.
+Use draw_workflow for process walkthroughs and draw_lesson for charts, diagrams, or requests to zoom or move nodes.
+These tools handle narration. Avoid repeating their spoken output. Use close_workflow_canvas when asked to close it.
+Base procedures on documented or user-provided facts. Clearly label illustrative examples.
+Desktop control is unavailable on this platform. Say so when asked to open or operate local apps.`,
       onUserTurnCompleted: beginUserTurn,
       async *llmNode(ctx, chatCtx, toolCtx, settings) {
         const stream = await voice.Agent.default.llmNode(ctx.agent, chatCtx, toolCtx, settings);

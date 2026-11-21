@@ -1,0 +1,73 @@
+:root { color-scheme: light; font: 14px/1.6 Inter, system-ui, sans-serif; color: #242833; background: #f5f6f8; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; height: 100vh; overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [data-answer-part="source-body"]:focus-visible { outline: 2px solid #55627a; outline-offset: 2px; }
+#sidebar { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; margin-left: auto; border-left: 1px solid #dadee5; }
+body:not([data-mode="sidebar"]) #sidebar { position: absolute; right: 0; width: var(--sidebar-width); visibility: hidden; pointer-events: none; }
+.stage { display: grid; background: #fff; border-bottom: 1px solid #e1e4eb; min-width: 0; }
+.stage-controls { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .55rem 1rem; font-weight: 650; }
+.stage-controls button, #expand { min-width: 36px; min-height: 36px; font-size: 21px; line-height: 1; padding: .2rem; border: 1px solid #e1e4eb; background: #f5f7f8; border-radius: .8rem; }
+.stage-controls button:hover { background: #e9ecf2; }
+.avatar-stage { overflow: hidden; display: grid; place-items: center; position: relative; height: auto; aspect-ratio: 16 / 9; max-height: 32vh; background: radial-gradient(ellipse at center, #f9fafc, #e9edf2); }
+#avatar { width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center 42%; }
+#avatar-placeholder { display: flex; align-items: center; justify-content: center; gap: 5px; width: 62px; height: 62px; border: 1px solid #d7dde5; border-radius: 50%; background: #fff; box-shadow: 0 4px 15px #23354a0d; }
+#avatar-placeholder i { display: block; width: 3px; border-radius: 3px; height: 12px; background: #5b6679; }
+#avatar-placeholder i:nth-child(2n) { height: 21px; }
+#avatar-placeholder i:nth-child(3) { height: 30px; }
+[data-avatar] #avatar-placeholder { visibility: hidden; }
+.call-controls { position: absolute; z-index: 1; right: .85rem; bottom: .85rem; }
+#status { margin: 0; padding: .5rem 1rem; font-size: .82rem; color: #525866; }
+#voice-toggle { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: #087f48; color: #fff; box-shadow: 0 3px 9px #182d2530; }
+#voice-toggle:hover { background: #066b3c; }
+#voice-toggle[data-in-call] { background: #ca303e; }
+#voice-toggle[data-in-call]:hover { background: #a92130; }
+#voice-toggle[data-in-call] .call-handset { transform: rotate(135deg); }
+.conversation { display: flex; min-height: 0; flex-direction: column; padding: .9rem 1rem .5rem; gap: .6rem; overflow: hidden; }
+.conversation h2 { margin: 0; font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere; }
+#transcript p, [data-answer-part="answer"], [data-answer-part="source-status"] { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+#empty-transcript { color: #596171; }
+.transcript-entry strong { display: block; color: #4e5769; font-size: .78rem; margin-bottom: .12rem; }
+[data-answer-part="source"] { margin-top: .75rem; padding: .65rem; border: 1px solid #e1e4eb; border-radius: 1rem; background: #f7f8fb; }
+.section-heading { display: flex; justify-content: space-between; align-items: start; gap: .5rem; }
+[data-answer-part="source-close"] { background: #f1f3f7; border: 1px solid #d1d6e1; border-radius: .65rem; font-size: 1.1rem; min-width: 32px; min-height: 32px; }
+[data-answer-part="source-status"] { color: #596171; font-size: .82rem; }
+[data-answer-part="source-body"] { overflow: auto; overflow-anchor: none; height: min(29vh, 20rem); background: #e8ebf1; border-radius: .7rem; margin-top: .35rem; }
+.pdf-page { position: relative; margin: 0 auto; background: white; }
+.pdf-page canvas { display: block; }
+.source-highlight { background: #ffe377; color: inherit; }
+.pdf-highlight { position: absolute; background: #ffc61f66; pointer-events: none; }
+.word-page { background: white; margin: .4rem; padding: .65rem; }
+#expand { height: 100%; width: 100%; background: #f5f7f8; color: #242833; }
+#diagram { position: absolute; inset: 0; }
+
+#transcript { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: .8rem; padding: .15rem .35rem .75rem .1rem; }
+.transcript-entry { flex: none; align-self: flex-start; width: fit-content; max-width: 93%; padding: .7rem .95rem; background: #fff; border: 1px solid #e1e4eb; border-radius: 1.15rem; box-shadow: 0 2px 6px #232b400a; }
+.transcript-entry[data-speaker="You"] { align-self: flex-end; background: #e7eaf2; }
+.grounded-entry { width: 96%; max-width: 96%; border-color: #cbd2e1; }
+[data-answer-part="citations"]:not(:empty) { margin-top: .8rem; padding-top: .45rem; border-top: 1px solid #e0e4ed; }
+.grounded-entry [data-answer-part="citations"]:not(:empty)::before { content: "Sources"; font-size: .76rem; font-weight: 650; color: #4d586d; }
+.citation { display: block; width: 100%; margin-top: .4rem; padding: .5rem .7rem; border: 1px solid #d8dde8; border-radius: .85rem; background: #f4f6fa; text-align: left; font-size: .85rem; overflow-wrap: anywhere; }
+.citation:hover { background: #e9edf6; border-color: #55627a; }
+.citation-title, .citation-detail { display: block; }
+.citation-title { font-weight: 650; }
+.citation-detail { color: #4d586d; font-size: .76rem; }
+
+.source-actions { display: flex; flex: none; align-items: center; gap: .35rem; }
+[data-answer-part="source-expand"] { min-height: 32px; padding: .25rem .55rem; border: 1px solid #d1d6e1; border-radius: .65rem; background: #fff; font-size: .76rem; }
+[data-answer-part="source"]:fullscreen { display: flex; flex-direction: column; gap: .45rem; margin: 0; padding: 1rem; border: 0; border-radius: 0; background: #f5f6f8; }
+[data-answer-part="source"]:fullscreen [data-answer-part="source-body"] { flex: 1; min-height: 0; height: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .transcript-entry, #expand { animation: message-enter 210ms ease-out both; }
+  .speech-fragment { animation: speech-enter 180ms ease-out both; }
+  [data-answer-part="source"]:not([hidden]) { animation: message-enter 210ms ease-out both; }
+}
+@keyframes message-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes speech-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

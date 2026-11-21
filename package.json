@@ -16,7 +16,8 @@
     "test:voice": "node --env-file-if-exists=.env test/voice-room.mjs",
     "connect": "node --env-file-if-exists=.env agent.mjs connect",
     "dev": "node --env-file-if-exists=.env agent.mjs dev",
-    "start": "start.cmd"
+    "start": "start.cmd",
+    "start:sidebar": "node demo.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.33.1",
