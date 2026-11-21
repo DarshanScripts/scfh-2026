@@ -96,6 +96,7 @@ app.whenReady().then(async () => {
     const target = new BrowserWindow({
       ...bounds('canvas'),
       title: 'Canvas',
+      frame: false,
       show: false,
       movable: false,
       resizable: false,
