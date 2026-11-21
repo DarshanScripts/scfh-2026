@@ -1,0 +1,17 @@
+SIMULATED INTERNAL RECORD — fictional correspondence, no emails were sent
+Harbour funding correspondence | FND-C12 | working log
+Dates and routing below belong to the demo scenario.
+
+2026-01-12 | Grants Coordinator → Operator finance role
+Requested an indicative schedule for documenting the railway own contribution. Asked the recipient to distinguish management sign-off from a draft annual budget line. No monetary figure was proposed.
+
+2026-01-14 | Operator finance role → Grants Coordinator
+Acknowledged the request and said that draft figures were being reconciled. No confirmation or approval was attached. Retain status “waiting for evidence” in FND-014.
+
+2026-01-15 | Programme Office → Grants Coordinator
+Asked whether a new combined transport call had been published. The grants desk had no verified notice to attach at the time of the exchange. Leave the route on the watch list and avoid treating a press item as an application opening.
+
+2026-01-19 | Grants Coordinator → Programme Office
+Provided a comparison of evidence still needed for the combined transport and railway routes. Instructed reviewers to keep the statutory applicant question separate from the availability of funding. Requested review of the simulation register on 29 January.
+
+Handling rule: do not paste mailbox export text into the approved decision record. Capture the date, source role and verified attachment status instead. If the mailbox account differs from the mapped project account, stop and ask a human to resolve access.

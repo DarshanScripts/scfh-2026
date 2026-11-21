@@ -20,13 +20,13 @@ async function validateResult(base, kind) {
   return validators.get(kind);
 }
 
-async function fetchResult(base, kind, route, query, turnId, requestId, signal) {
+async function fetchResult(base, kind, route, query, turnId, requestId, signal, context) {
   if (!base) throw new Error('The onboarding service is unavailable.');
   const validate = await validateResult(base, kind);
   const response = await fetch(new URL(route, base), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId, requestId }),
-    signal: AbortSignal.any([signal, AbortSignal.timeout(45_000)]),
+    body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId, requestId, ...(context && { context }) }),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(context ? 95_000 : 45_000)]),
   });
   if (!response.ok) throw new Error('The onboarding service could not complete the request.');
   const result = await response.json();
@@ -34,9 +34,19 @@ async function fetchResult(base, kind, route, query, turnId, requestId, signal) 
   return result;
 }
 
-export function createOnboardingAnswers(room, base) {
+export function createOnboardingAnswers(room, base, { harbour = false } = {}) {
   let turnId;
   let pending;
+  let workflowStepId;
+  let previousQuery;
+  let lastGroundedAnswer;
+
+  const context = () => harbour ? { workflowStepId, previousQuery } : undefined;
+  function onWorkflowStep(stepId, workflowId) {
+    if (!harbour) return;
+    if (workflowId === 'hildesheim-harbour-funding') workflowStepId = 'financial-feasibility';
+    else if (workflowId === 'hildesheim-harbour') workflowStepId = stepId;
+  }
 
   async function publish(event) {
     const message = JSON.stringify({ schemaVersion: 1, ...event });
@@ -52,7 +62,9 @@ export function createOnboardingAnswers(room, base) {
 
   const tool = llm.tool({
     name: 'answer_onboarding_question',
-    description: 'Answer Facilities Service Desk onboarding questions from the approved demo documents and queue. The answer is spoken and shown with clickable citations. Use the current user question in their own words.',
+    description: harbour
+      ? 'Answer Hildesheim Harbour questions and contextual follow-ups from the original budget and council records with citations. Pass the current user question verbatim; the service receives workflow context.'
+      : 'Answer Facilities Service Desk onboarding questions from the approved demo documents and queue. The answer is spoken and shown with clickable citations. Use the current user question in their own words.',
     parameters: { type: 'object', additionalProperties: false, required: ['query'],
       properties: { query: { type: 'string', maxLength: 600 } } },
     async execute({ query }, { ctx, abortSignal }) {
@@ -63,9 +75,20 @@ export function createOnboardingAnswers(room, base) {
       if (!id || !current()) return;
       let text;
       try {
-        const answer = await fetchResult(base, 'answer', '/api/question', query, id, requestId, abortSignal);
+        const answer = await fetchResult(base, 'answer', '/api/question', query, id, requestId, abortSignal, context());
         if (!current()) return;
         await publish({ type: 'answer', turnId: id, requestId, answer });
+        if (!current()) return;
+        if (harbour && answer.claims.length) {
+          previousQuery = query.trim();
+          const sources = [...new Set(answer.citations.map(citation => {
+            const { pageLabel, format, page } = citation.locator;
+            const location = format === 'pdf' && pageLabel && pageLabel !== String(page)
+              ? `p. ${pageLabel} (PDF ${page})` : pageLabel || (format === 'pdf' ? `p. ${page}` : '');
+            return [citation.title, location].filter(Boolean).join(' · ');
+          }))];
+          lastGroundedAnswer = { question: previousQuery, answer: answer.text, sources };
+        }
         text = answer.text;
       } catch {
         if (!current()) return;
@@ -79,8 +102,21 @@ export function createOnboardingAnswers(room, base) {
   async function getWalkthrough(query, signal) {
     const id = turnId;
     if (!id || signal.aborted) return;
-    const result = await fetchResult(base, 'walkthrough', '/api/walkthrough', query, id, randomUUID(), signal);
-    if (turnId === id && !signal.aborted) return result;
+    const requestId = randomUUID();
+    const result = await fetchResult(base, 'walkthrough', '/api/walkthrough', query, id, requestId, signal, context());
+    if (turnId !== id || signal.aborted) return;
+    if (harbour && result.outcome === 'ready') {
+      const claims = result.steps.map(step => ({
+        claimId: step.stepId, text: step.narration, passageIds: step.passageIds,
+      }));
+      const answer = { schemaVersion: 1, requestId, turnId: id, outcome: 'answered',
+        text: claims.map(claim => claim.text).join(' '), claims, citations: result.citations };
+      // The original walkthrough stays cached by this request ID for citation resolution.
+      await publish({ type: 'answer', turnId: id, requestId, answer }).catch(() => {});
+      if (turnId !== id || signal.aborted) return;
+      previousQuery = query.trim();
+    }
+    return result;
   }
-  return { beginTurn, tool, getWalkthrough };
+  return { beginTurn, tool, getWalkthrough, onWorkflowStep, latestEvidence: () => lastGroundedAnswer };
 }

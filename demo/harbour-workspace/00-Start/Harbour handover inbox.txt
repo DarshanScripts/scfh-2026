@@ -1,0 +1,18 @@
+SIMULATED INTERNAL RECORD — training only
+Harbour Expansion and Renovation | Handover inbox | v1.3
+Scenario snapshot: 20 January 2026 | Maintainer: Programme Office (demo role)
+
+FIRST SHIFT
+The incoming officer owns the evidence check for the next funding review. Keep the findings in the 2025 public proposal separate from simulated follow-up tasks. The proposal is historical. A note that a programme had no available funds then does not establish its status today.
+
+Use 01-Funding/Grant readiness register.txt for the active handover. The first record names the outstanding evidence item, its owner and the intended review date. The applicant memo gives the reasoning behind that task. The email log shows the difference between an acknowledgement and confirmation that a call is open.
+
+When preparing the review pack, preserve the proposal, amendment and council resolution as separate records. Enter only confirmed changes in the revision log. Keep drafts out of the approved decision register. Avoid using a proposed project company as the applicant until its authority has been established.
+
+OPEN ITEMS AT HANDOVER
+- FND-014: Document the own contribution before describing the railway route as ready.
+- DEP-008: Reconcile the working waterfront schedule with the next WSV milestone.
+- GOV-021: Verify the baseline used for the cost variance calculation.
+- DEL-004: Confirm which team owns the inspection access window before communicating it.
+
+Desk practice: attach the evidence to each task first, then change status. A row marked “awaiting evidence” stays open even when a draft has been prepared. Role labels, tickets and working dates are fictional.

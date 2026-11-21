@@ -1,0 +1,15 @@
+SIMULATED INTERNAL RECORD — training only
+Rail renewal work package | INF-R07 | issue 0.6
+Scenario owner: Rail Interface Coordinator | Status: scope review
+
+Purpose: prepare a preliminary inventory that can be compared with the public budget lines. Keep renewals for track, switches and crossings identifiable by asset and location. The inventory does not authorize spending or track access.
+
+Intake for proposed work:
+1. Record the asset identifier, kilometre reference if available, and why the item has been raised.
+2. Compare the issue against scheduled renewals to avoid counting the same item twice.
+3. Route technical questions to the rail infrastructure operator and mark the answer's date and source.
+4. For a cost item, label the basis as estimate, quote or approved allocation. Record which year the value belongs to before copying a total into the budget review.
+
+Open items at rehearsal: the asset label in one historic extract differs from the maintenance list; the operator needs to reconcile it. One access window remains provisional. The funding team is separately waiting for evidence of the operator's own contribution under FND-014.
+
+Escalation: if the scope changes the cost or timetable materially, update the variance log and obtain a review before relabelling the work package. Do not treat grants or simulated delivery dates as approved.

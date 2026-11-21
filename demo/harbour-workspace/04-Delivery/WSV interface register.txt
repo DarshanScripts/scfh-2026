@@ -1,0 +1,13 @@
+SIMULATED INTERNAL RECORD — training only
+WSV interface register | DEP-W04 | provisional issue
+Scenario owner: External Coordination Desk | Snapshot: 20 January 2026
+
+Purpose: keep potential schedule effects visible where the harbour interfaces with the branch canal, sheet-pile wall and linked road or rail work. This is a fictional coordination log. It does not modify the WSV agreement or represent confirmation from WSV.
+
+DEP-008 — Waterfront schedule alignment. Record the currently agreed source for sequencing before moving the milestone in the internal plan. A working date is a planning assumption until confirmed through the appropriate coordination route.
+
+DEP-011 — Terminal design assumptions. Capture which scope elements depend on the planned physical interface. If a dependency changes, record the affected package and obtain a review before rolling the change into a budget table.
+
+DEP-015 — Related road schemes. Distinguish the B6 relocation and A7 connection as separate external dependencies. An update to one scheme does not automatically move the other scheme's date.
+
+Closeout evidence for each interface: dated source record, decision or response status, owner and next review. Carry conditions and exceptions forward when moving a date into the dashboard. Public background: Vorlage 25/426, contract section; council continuation of the WSV agreement at printed p. 787 (PDF 789).
