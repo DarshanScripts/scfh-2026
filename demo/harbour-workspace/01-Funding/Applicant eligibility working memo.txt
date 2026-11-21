@@ -1,0 +1,13 @@
+SIMULATED INTERNAL RECORD — training only
+Applicant eligibility working memo | FND-M06 | review copy
+Owner: Grants Coordinator (demo role) | Scenario date: 19 January 2026
+
+Purpose: give the incoming desk officer a reproducible check for applicant readiness. Use the relevant scheme, legal entity and measure together. Do not copy eligibility conclusions from one scheme into another.
+
+Combined transport: the 2025 administrative proposal described a private-company route and named HBG as a possible applicant if it acts as the long-term lessee. Recheck the published rules and obtain evidence of the applicant's capacity before deciding who prepares an application. The same proposal reported no funding available in that instrument at the time. A high maximum rate cannot overcome an unopen call.
+
+Rail renewal: confirm the entity that operates the affected infrastructure. The proposal identified HBG as the operator and described a shortfall in the evidence of own contribution. In the rehearsal scenario, request confirmation showing the amount, approval authority and any conditions before marking the rail route ready.
+
+EFRE: track this in a separate row rather than treating it as a substitute automatically. The proposal described the existing funds as committed. Check the date of any new notice and confirm the costs it covers.
+
+File the current rule text, the applicant evidence, and your dated assessment together. Record “unknown” when a piece is missing. Internal procedures and role labels on this sheet are fictional. Public source: Vorlage 25/426, printed pp. 750–751 (PDF 752–753).

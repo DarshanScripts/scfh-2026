@@ -1,0 +1,14 @@
+SIMULATED INTERNAL RECORD — training only
+East quay condition handover | INF-023 | working copy
+Scenario date: 21 January 2026 | Owner: Civil Works Coordinator (demo role)
+
+The public proposal records that the 2024 reassessment could no longer demonstrate stability by calculation. The simulated work here is organising the evidence pack, not an engineering assessment, an instruction to work, or a report of a new site finding.
+
+Before circulating the asset note, match the location IDs used by the survey team to the location names used in the budget. Mark observations and design assumptions separately. Ask the responsible engineer to check whether inspection notes refer to the same reach of wall before comparing them. Keep the approved survey originals in the asset record and record any missing appendix in the document log.
+
+Open issues for this rehearsal:
+- INF-023-A: Confirm which photographs belong to the east quay and ensure the location field is present.
+- INF-023-B: Locate the figure referenced in the earlier condition note. Record the original report page when available.
+- INF-023-C: Keep survey access arrangements separate from the formal works schedule. Do not infer site availability from the asset register.
+
+Review outputs are an indexed list of evidence and a short description of unresolved items. Route technical decisions to the engineering owner. Public reference: Vorlage 25/426, printed p. 726 (PDF 728).

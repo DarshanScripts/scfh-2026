@@ -1,0 +1,8 @@
+record_type,action_id,workstream,action,owner_role,status,target_review,close_evidence
+SIMULATED TRAINING,FND-014,Funding,Request signed own-contribution confirmation from HBG Finance,Funding Desk,Waiting for evidence,2026-01-29,Confirmation names amount source and approval status
+SIMULATED TRAINING,DEP-008,External coordination,Reconcile waterfront sequence with the available milestone record,External Coordination Desk,Open,2026-02-02,Dated source and affected schedules registered
+SIMULATED TRAINING,INF-023-A,Infrastructure,Label the evidence photographs against the asset reference,Civil Works Coordinator,In progress,2026-01-28,Reviewed photo index with locations
+SIMULATED TRAINING,GOV-021,Governance,Check which approved baseline is used in the variance pack,Finance Liaison,Waiting for review,2026-01-27,Reviewed budget baseline and linked justification
+SIMULATED TRAINING,DEL-004,Delivery,Confirm the owner of the inspection access window,Site Interface Coordinator,Open,2026-02-03,Written acknowledgement from the responsible team
+SIMULATED TRAINING,FND-009,Funding,Check whether a new combined transport call is published,Grants Coordinator,Monitor only,2026-02-04,Dated programme notice or dated negative search
+SIMULATED TRAINING,GOV-022,Governance,Index the amendment separately from the council record,Programme Office,Done,2026-01-19,Separate register entries with their source dates

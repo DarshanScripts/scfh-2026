@@ -1,0 +1,7 @@
+record_type,observation_id,work_package,baseline_eur,forecast_eur,variance_percent,review_status,owner_role,entry_note
+SIMULATED TRAINING,GOV-021A,East quay enabling works,840000,875000,4.17,Awaiting baseline check,Finance Liaison,Reconcile scope split before any reporting decision
+SIMULATED TRAINING,GOV-021B,Rail interface package,360000,406800,13.00,Escalation exercise,Programme Office,Training example only; flag the threshold in the rehearsal
+SIMULATED TRAINING,GOV-021C,Survey access,92000,89000,-3.26,Explained change,Civil Works Coordinator,Verify access assumptions behind the forecast
+SIMULATED TRAINING,GOV-021D,Terminal design interface,215000,215000,0.00,Open dependency,Design Coordinator,No price change; schedule assessment still pending
+SIMULATED TRAINING,GOV-021E,Internal evidence review,25000,26500,6.00,Reviewed,Finance Liaison,Demonstration line; no real cost approval implied
+SIMULATED TRAINING,GOV-021F,West quay planning study,180000,201600,12.00,Pending review,Civil Works Coordinator,Scenario value only; distinct from public planning appropriation

@@ -1,0 +1,11 @@
+SIMULATED INTERNAL RECORD — training only
+Project reporting procedure | GOV-P05 | draft 0.4
+Scenario owner: Programme Office | Effective date: pending demo approval
+
+The public council record provides the reporting requirement. This simulated procedure describes an internal method for collecting inputs for that report. It introduces no new council rule.
+
+Prepare the report from the approved baseline and use the same cutoff for schedule and cost data. Capture the current position, prior reported position and the reason for any change. Keep planned commitments and expenditure in separate columns. Attach the latest cleared risk register and say which figures remain estimates. Include upcoming decisions and the responsible department for each one.
+
+For the rehearsal escalation test, record the baseline amount used in the percentage calculation. If an apparent change is driven by a scope reclassification, document both figures and route it to the Finance Liaison (demo role) for clarification. A material change can require escalation even if a numeric threshold has not been crossed.
+
+Before release: check source pages, approval status and recipient list. Keep the circulated version and record the date of receipt. An internal draft or unsigned spreadsheet is not a committee notice. Public reference: council record, printed p. 787 (PDF 789).

@@ -1,0 +1,21 @@
+SIMULATED INTERNAL RECORD — training only
+HARBOUR GRANT READINESS REGISTER | FND-R01 | v1.4
+As of 20 January 2026 | Owner: Funding Desk (demo role)
+
+FND-014 | Railway renewal | WAITING FOR EVIDENCE
+Next action: Ask HBG Finance for a signed own-contribution confirmation.
+Action owner: Funding Desk.
+Target review: 29 January 2026.
+Close when: The confirmation names the amount, source and approval status.
+Reference: Public budget, Vorlage 25/426, printed p. 751 (PDF 753).
+
+FND-009 | Combined transport terminal | MONITOR ONLY
+Next action: Check for a published new call before preparing an application.
+Action owner: Grants Coordinator. Review alongside FND-014.
+The 2025 proposal described a funding gap. This mock register does not confirm current availability.
+Reference: Vorlage 25/426, printed p. 750 (PDF 752).
+
+FND-018 | EFRE intermodal nodes | WATCH LIST
+Record the dated programme notice when published. Keep this route separate from FND-009 in the funding matrix. Do not carry an old draft rate forward without checking the new notice.
+
+Status rule: A draft, verbal indication or supplier quote cannot close an evidence item. Record where the verified document is stored and who approved it. The dates and open actions in this register are fictional.
