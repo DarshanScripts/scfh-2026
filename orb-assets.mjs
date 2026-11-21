@@ -1,24 +1,17 @@
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { build } from 'esbuild';
 
 const fromRoot = (path) => new URL(path, import.meta.url);
 
 export async function loadOrbAssets() {
-  const [html, style, sdk, bundle] = await Promise.all([
-    readFile(fromRoot('./demo/index.html')),
-    readFile(fromRoot('./demo/orb.css')),
-    readFile(fromRoot('./node_modules/livekit-client/dist/livekit-client.umd.js')),
-    build({
-      entryPoints: [fileURLToPath(fromRoot('./demo/orb.jsx'))],
-      bundle: true, write: false, minify: true, jsx: 'automatic',
-      define: { 'process.env.NODE_ENV': '"production"' },
-    }),
-  ]);
-  return new Map([
-    ['/', ['text/html; charset=utf-8', html]],
-    ['/orb.css', ['text/css; charset=utf-8', style]],
-    ['/orb.js', ['text/javascript; charset=utf-8', bundle.outputFiles[0].contents]],
-    ['/livekit.js', ['text/javascript; charset=utf-8', sdk]],
-  ]);
+  const routes = [
+    ['/', './demo/index.html', 'text/html'],
+    ['/sidebar.css', './demo/sidebar.css', 'text/css'],
+    ['/orb.js', './demo/orb.js', 'text/javascript'],
+    ['/livekit.js', './node_modules/livekit-client/dist/livekit-client.umd.js', 'text/javascript'],
+    ['/rough/rough.js', './node_modules/roughjs/bundled/rough.js', 'text/javascript'],
+    ...['panel.mjs', 'canvas.mjs', 'contract.mjs', 'export.mjs', 'panel.css'].map(name =>
+      ['/rough/' + name, './packages/rough-canvas/' + name, name.endsWith('.css') ? 'text/css' : 'text/javascript']),
+  ];
+  return new Map(await Promise.all(routes.map(async ([route, file, type]) =>
+    [route, [type + '; charset=utf-8', await readFile(fromRoot(file))]])));
 }

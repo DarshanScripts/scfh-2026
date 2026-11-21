@@ -54,7 +54,7 @@ const menu = createServer(async (request, response) => {
   response.setHeader('Cache-Control', 'no-store');
   response.setHeader('Permissions-Policy', 'microphone=(self), camera=()');
   response.setHeader('Content-Security-Policy',
-    "default-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; connect-src 'self' https: wss: ws://127.0.0.1:*");
+    "default-src 'self'; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; font-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; media-src 'self' blob:; connect-src 'self' https: wss: ws://127.0.0.1:*");
   if (request.headers.host !== host + ':' + menuPort) return response.writeHead(403).end();
   if (request.method === 'GET') {
     const asset = orbAssets.get(request.url);

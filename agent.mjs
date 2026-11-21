@@ -24,7 +24,7 @@ export default defineAgent({
     const desktopGuard = createDesktopActionGuard();
     const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
     let avatarAudio;
-    const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough });
+    const workflows = createWorkflowTools({ room: ctx.room, getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough });
     ctx.addShutdownCallback(() => workflows.close());
     const session = new voice.AgentSession({
       maxToolSteps: 24,

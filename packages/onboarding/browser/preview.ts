@@ -9,14 +9,34 @@ function normalize(text: string) {
   return text.replace(/\s+/gu, " ").trim();
 }
 
-function scrollToPassage(target: Element) {
+type PreviewOptions = { scroller: HTMLElement; signal: AbortSignal };
+
+function scrollToPassage(target: Element, options?: PreviewOptions) {
   requestAnimationFrame(() => {
-    if (!target.isConnected) return;
-    target.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-      block: "center",
-      inline: "nearest",
-    });
+    if (!target.isConnected || options?.signal.aborted) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!options) {
+      target.scrollIntoView({ behavior: reduced ? "instant" : "smooth", block: "center", inline: "nearest" });
+      return;
+    }
+    const { scroller, signal } = options;
+    const targetRect = target.getBoundingClientRect();
+    const from = scroller.scrollTop;
+    const to = Math.max(0, Math.min(scroller.scrollHeight - scroller.clientHeight,
+      from + targetRect.top - scroller.getBoundingClientRect().top - (scroller.clientHeight - targetRect.height) / 2));
+    if (reduced || Math.abs(to - from) < 2) {
+      scroller.scrollTop = to;
+      return;
+    }
+    const duration = Math.max(460, Math.min(1050, Math.abs(to - from) * 1.2));
+    const start = performance.now();
+    function tick(now: number) {
+      if (!target.isConnected || signal.aborted) return;
+      const progress = Math.min(1, (now - start) / duration);
+      scroller.scrollTop = from + (to - from) * (1 - (1 - progress) ** 2);
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   });
 }
 
@@ -51,7 +71,7 @@ function locatedRange(nodes: Text[], start: number, end: number, quote: string):
   return range;
 }
 
-function openWord(source: Source, container: HTMLElement): boolean {
+function openWord(source: Source, container: HTMLElement, options?: PreviewOptions): boolean {
   const locator = source.passage.locator;
   if (locator.format !== "docx" || !source.paragraphs) return false;
   const headings: { path: string[]; element: HTMLElement }[] = [];
@@ -87,11 +107,11 @@ function openWord(source: Source, container: HTMLElement): boolean {
   container.replaceChildren(article);
   const nearest = headings.filter(item => item.path.every((part, i) => part === locator.headingPath[i]))
     .sort((a, b) => b.path.length - a.path.length)[0];
-  scrollToPassage(paragraph?.querySelector("mark") ?? paragraph ?? nearest?.element ?? article);
+  scrollToPassage(paragraph?.querySelector("mark") ?? paragraph ?? nearest?.element ?? article, options);
   return highlight;
 }
 
-async function openPdf(source: Source, container: HTMLElement): Promise<boolean> {
+async function openPdf(source: Source, container: HTMLElement, options?: PreviewOptions): Promise<boolean> {
   const locator = source.passage.locator;
   if (locator.format !== "pdf") return false;
   const pdfjs: typeof import("pdfjs-dist") = await import(new URL("/pdfjs/pdf.mjs", location.origin).href);
@@ -101,7 +121,11 @@ async function openPdf(source: Source, container: HTMLElement): Promise<boolean>
     const pdf = await task.promise;
     const pageNumber = Math.min(locator.page, pdf.numPages);
     const page = await pdf.getPage(pageNumber);
-    const viewport = page.getViewport({ scale: 1.05 });
+    const original = page.getViewport({ scale: 1 });
+    const fullscreen = document.fullscreenElement?.contains(container);
+    const maxScale = fullscreen ? 1.65 : 1.05;
+    const scale = options ? Math.min(maxScale, Math.max(0.1, (options.scroller.clientWidth - 16) / original.width)) : maxScale;
+    const viewport = page.getViewport({ scale });
     const wrapper = document.createElement("div");
     wrapper.className = "pdf-page";
     wrapper.style.width = viewport.width + "px";
@@ -123,14 +147,14 @@ async function openPdf(source: Source, container: HTMLElement): Promise<boolean>
       textLayer.render(),
     ]);
     if (source.status !== "exact" || pageNumber !== locator.page) {
-      scrollToPassage(wrapper);
+      scrollToPassage(wrapper, options);
       return false;
     }
     const nodes = textLayer.textDivs.map(span => span.firstChild)
       .filter((child): child is Text => child instanceof Text);
     const range = locatedRange(nodes, locator.start, locator.end, source.passage.quote);
     if (!range) {
-      scrollToPassage(wrapper);
+      scrollToPassage(wrapper, options);
       return false;
     }
     const origin = wrapper.getBoundingClientRect();
@@ -145,17 +169,17 @@ async function openPdf(source: Source, container: HTMLElement): Promise<boolean>
       wrapper.append(highlight);
     }
     const visible = wrapper.querySelector(".source-highlight");
-    if (visible) scrollToPassage(visible);
+    if (visible) scrollToPassage(visible, options);
     return visible !== null;
   } finally {
     await task.destroy();
   }
 }
 
-export async function preview(source: Citation, container: HTMLElement): Promise<string> {
+export async function preview(source: Citation, container: HTMLElement, options?: PreviewOptions): Promise<string> {
   if (source.status === "unavailable") return "The source document is unavailable.";
   if (source.passage.locator.format === "docx") {
-    return openWord(source, container) ? "" : NO_HIGHLIGHT;
+    return openWord(source, container, options) ? "" : NO_HIGHLIGHT;
   }
-  return await openPdf(source, container) ? "" : NO_HIGHLIGHT;
+  return await openPdf(source, container, options) ? "" : NO_HIGHLIGHT;
 }

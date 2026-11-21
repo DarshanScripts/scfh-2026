@@ -68,7 +68,7 @@ def test_unanswerable_question_has_no_claims_or_citations(passage):
 def test_embedding_call_uses_configured_model_and_requested_dimensions(httpx_mock):
     router = Router(Settings(
         qdrant_url="https://qdrant.example", qdrant_key="private",
-        openrouter_key="private", embedding_model="configured/model", answer_model="configured/chat",
+        openrouter_key="private", anthropic_key="private", embedding_model="configured/model", answer_model="configured/chat",
     ))
     httpx_mock.add_response(
         url="https://openrouter.ai/api/v1/embeddings",
@@ -88,7 +88,7 @@ def test_embedding_call_uses_configured_model_and_requested_dimensions(httpx_moc
 def test_incompatible_embedding_dimensions_are_rejected(httpx_mock):
     router = Router(Settings(
         qdrant_url="https://qdrant.example", qdrant_key="private",
-        openrouter_key="private", embedding_model="configured/model", answer_model="configured/chat",
+        openrouter_key="private", anthropic_key="private", embedding_model="configured/model", answer_model="configured/chat",
     ))
     httpx_mock.add_response(
         url="https://openrouter.ai/api/v1/embeddings",

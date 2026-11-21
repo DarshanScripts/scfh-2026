@@ -10,6 +10,8 @@ import {
   Room, RoomEvent, TrackKind, TrackSource, dispose,
 } from '@livekit/rtc-node';
 import { avatarModeAttribute, voiceFallback } from '../avatar-mode.mjs';
+import { DRAW_RPC } from '../packages/rough-canvas/contract.mjs';
+import { validateStep } from '../packages/rough-canvas/canvas.mjs';
 
 assert.equal(process.platform, 'win32', 'Run the native voice smoke test on Windows.');
 const base = 'http://127.0.0.1:' + Number(process.env.DEMO_PORT || 4321);
@@ -44,6 +46,19 @@ let avatarVideo = false;
 let citedAnswer;
 let incomingTranscript = '';
 let replyTranscript = '';
+let canvasRun;
+let canvasStep = 0;
+let canvasComplete = false;
+async function handleCanvas({ payload, callerIdentity }) {
+  const agent = room.remoteParticipants.get(callerIdentity);
+  if (!agent?.attributes['lk.agent.state']) return 'invalid';
+  const message = JSON.parse(payload);
+  if (message.type === 'begin') { canvasRun = message.id; canvasStep = 0; canvasComplete = false; return 'ok'; }
+  if (message.id !== canvasRun) return 'closed';
+  if (message.type === 'step' && message.index === canvasStep && validateStep(message)) { canvasStep++; return 'ok'; }
+  if (message.type === 'completed') { canvasComplete = true; return 'ok'; }
+  return ['paused', 'failed', 'dismiss'].includes(message.type) ? 'ok' : 'invalid';
+}
 
 const avatarFellBack = () => [...room.remoteParticipants.values()].some((participant) =>
   participant.attributes[avatarModeAttribute] === voiceFallback);
@@ -116,6 +131,7 @@ try {
   const { url, token, avatarEnabled: withAvatar } = await ticket.json();
   avatarEnabled = withAvatar === true;
   await room.connect(url, token);
+  room.localParticipant.registerRpcMethod(DRAW_RPC, handleCanvas);
   const track = LocalAudioTrack.createAudioTrack('test-microphone', source);
   await room.localParticipant.publishTrack(track, { source: TrackSource.SOURCE_MICROPHONE });
   await waitFor(() => [...room.remoteParticipants.values()].some((p) => p.attributes['lk.agent.state'] === 'listening'),
@@ -147,6 +163,8 @@ try {
     await waitFor(() => /confirm the timing with the desk lead/i.test(replyTranscript), 'all seven narrated Rough.js steps', 90_000);
     assert.match(replyTranscript, /callback channel/i);
     assert.match(replyTranscript, /maintenance queue/i);
+    await waitFor(() => canvasComplete, 'the acknowledged sidebar canvas', 10_000);
+    assert.equal(canvasStep, 7);
     console.log('PASS The Rough.js walkthrough narrated the approved steps through the final note.');
   } else if (qa) {
     await waitFor(() => citedAnswer && /desk lead/i.test(replyTranscript), 'the cited and spoken answer', 45_000);

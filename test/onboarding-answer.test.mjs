@@ -21,6 +21,7 @@ const sdk = `window.LivekitClient = {
       identity: 'test-worker', kind: 4, attributes: { 'lk.agent.state': 'listening' }, trackPublications: new Map(),
     }]]);
     on() {}
+    registerRpcMethod() {}
     async connect() {}
     async startAudio() {}
     async disconnect() {}
@@ -55,7 +56,7 @@ test('the onboarding tool speaks the displayed answer and opens exact PDF and Wo
     app = await _electron.launch({ executablePath: createRequire(import.meta.url)('electron'), env: getDefaultEnvironment(),
       args: [fileURLToPath(new URL('../floating-window.cjs', import.meta.url)), origin] });
     const orb = await app.firstWindow();
-    await orb.getByRole('button', { name: 'Call voice agent' }).click();
+    await orb.getByRole('button', { name: 'Start call' }).click();
     await orb.locator('[data-state="listening"]').waitFor();
     const messages = [];
     const room = { localParticipant: { async sendText(message, { topic }) {
@@ -75,11 +76,16 @@ test('the onboarding tool speaks the displayed answer and opens exact PDF and Wo
       assert.equal(spoken.at(-1), event.answer.text);
       return event.answer;
     }
-    const open = app.waitForEvent('window');
+    const panel = orb;
     await ask('Where’s the guide for logging a maintenance request, and what do I need before I open a ticket?');
-    const panel = await open;
+
     await panel.getByRole('button', { name: /Intake checklist/ }).click();
     await panel.locator('.pdf-page[data-page="2"] .source-highlight').first().waitFor();
+    await panel.getByRole('button', { name: 'Full screen', exact: true }).click();
+    await panel.waitForFunction(() => Boolean(document.fullscreenElement));
+    await panel.locator('.pdf-page[data-page="2"] .source-highlight').first().waitFor();
+    await panel.getByRole('button', { name: 'Exit full screen', exact: true }).click();
+    await panel.waitForFunction(() => !document.fullscreenElement);
     await ask('A maintenance ticket still has no owner. When should I follow up, and who do I tell?');
     await panel.locator('button[data-passage="unassigned-reminder"]').click();
     const reminder = panel.locator('.word-page mark.source-highlight');
@@ -91,11 +97,11 @@ test('the onboarding tool speaks the displayed answer and opens exact PDF and Wo
     }
     const deadline = await ask('I’m taking over the queue. Which open item is due first, and who owns it?');
     assert.match(deadline.text, /FM-104/);
-    await panel.locator('#answer').filter({ hasText: 'FM-104' }).waitFor();
+    await panel.locator('[data-answer-part="answer"]').filter({ hasText: 'FM-104' }).waitFor();
     assert.equal((await ask('What budget do we have for repairs?')).outcome, 'insufficient');
-    await panel.locator('#answer[data-outcome="insufficient"]').waitFor();
+    await panel.locator('[data-answer-part="answer"][data-outcome="insufficient"]').waitFor();
     assert.equal((await ask('Which open ticket is due first, and what budget do we have for repairs?')).outcome, 'partial');
-    await panel.locator('#answer[data-outcome="partial"]').waitFor();
+    await panel.locator('[data-answer-part="answer"][data-outcome="partial"]').waitFor();
   } finally {
     await app?.close();
     server?.closeAllConnections();

@@ -1,14 +1,60 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Facilities Voice</title>
-  <link rel="stylesheet" href="/orb.css">
-  <script defer src="/livekit.js"></script>
-  <script defer src="/orb.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice workspace</title>
+<link rel="stylesheet" href="/pdfjs/pdf_viewer.css">
+<link rel="stylesheet" href="/rough/panel.css">
+<link rel="stylesheet" href="/sidebar.css">
 </head>
 <body>
-  <div id="root"></div>
+<main id="sidebar">
+  <header class="stage">
+    <div class="stage-controls">
+      <span>Voice workspace</span>
+      <button id="collapse" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">›</button>
+    </div>
+    <div class="avatar-stage">
+      <span id="avatar-placeholder" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <video id="avatar" autoplay playsinline muted hidden></video>
+      <div class="call-controls">
+        <button id="voice-toggle" type="button" aria-label="Start call" title="Start call" aria-describedby="status">
+          <svg class="call-handset" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 18 18 0 0 1-7.9-2.8 18 18 0 0 1-5.5-5.5 18 18 0 0 1-2.8-8A2 2 0 0 1 5.6 3h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.5 2.1l-1.3 1.3a14 14 0 0 0 5.5 5.5l1.3-1.3a2 2 0 0 1 2.1-.5l2.1.4a2 2 0 0 1 1.7 1.9Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <p id="status" role="status" hidden></p>
+  </header>
+  <section class="conversation" aria-label="Conversation">
+    <div id="transcript" role="log" aria-live="polite">
+      <p id="empty-transcript">Start a call to ask a question or walk through a process.</p>
+    </div>
+    <template id="answer-template">
+      <div class="grounded-answer">
+        <p data-answer-part="answer"></p>
+        <div data-answer-part="citations" aria-label="Sources"></div>
+        <section data-answer-part="source" hidden aria-label="Source preview">
+          <div class="section-heading">
+            <h2 data-answer-part="source-title"></h2>
+            <div class="source-actions">
+              <button data-answer-part="source-expand" type="button">Full screen</button>
+              <button data-answer-part="source-close" type="button" aria-label="Close source">×</button>
+            </div>
+          </div>
+          <p data-answer-part="source-status" role="status"></p>
+          <div data-answer-part="source-body" tabindex="0" aria-label="Source document"></div>
+        </section>
+      </div>
+    </template>
+  </section>
+</main>
+<button id="expand" type="button" title="Expand sidebar" aria-label="Expand sidebar" hidden>‹</button>
+<section id="diagram" aria-label="Workflow canvas" hidden></section>
+<script src="/livekit.js"></script>
+<script src="/rough/rough.js"></script>
+<script type="module" src="/orb.js"></script>
 </body>
 </html>

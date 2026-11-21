@@ -10,6 +10,7 @@ const assetPaths = new Map([
   ['/rough/panel.mjs', ['./packages/rough-canvas/panel.mjs', 'text/javascript']],
   ['/rough/canvas.mjs', ['./packages/rough-canvas/canvas.mjs', 'text/javascript']],
   ['/rough/contract.mjs', ['./packages/rough-canvas/contract.mjs', 'text/javascript']],
+  ['/rough/export.mjs', ['./packages/rough-canvas/export.mjs', 'text/javascript']],
   ['/rough/panel.css', ['./packages/rough-canvas/panel.css', 'text/css']],
   ['/rough.js', ['./node_modules/roughjs/bundled/rough.js', 'text/javascript']],
 ]);

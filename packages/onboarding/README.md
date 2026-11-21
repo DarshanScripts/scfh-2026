@@ -13,9 +13,9 @@ From this directory, use Python 3.12 or newer, uv, Node.js 22.13 or newer, and B
 
 Open http://127.0.0.1:8765. Qdrant mode has prompts for work-order assignment, access management findings, and completion records. Select a citation to open the original PDF and highlight its supporting quote. Ask “What is the cafeteria lunch menu for tomorrow?” to check insufficient evidence. For a walkthrough, ask “According to the June 2020 audit, walk me through requesting and completing a maintenance work order.” Narration is simulated in the Linux harness.
 
-The root .env must contain QDRANT_URL, QDRANT_API_KEY, OPENROUTER_API_KEY, EMBEDDING_MODEL, and OPENROUTER_MODEL. Start-up loads those settings without copying credentials into the browser.
+The root .env must contain QDRANT_URL, QDRANT_API_KEY, OPENROUTER_API_KEY, EMBEDDING_MODEL, ANTHROPIC_API_KEY, and LLM_MODEL. OpenRouter provides embeddings; Anthropic generates grounded answers and workflows. Start-up loads those settings without copying credentials into the browser.
 
-Qdrant mode combines 768-dimensional cloud vector retrieval with local BM25 keyword ranking. It uses EMBEDDING_MODEL through OpenRouter for document and query embeddings, then uses OPENROUTER_MODEL to generate an answer from retrieved passages. Each cited quote is checked against its original passage and narrowed to an exact page range.
+Qdrant mode combines 768-dimensional cloud vector retrieval with local BM25 keyword ranking. It uses EMBEDDING_MODEL through OpenRouter for document and query embeddings, then uses LLM_MODEL through Anthropic to generate an answer from retrieved passages. Each cited quote is checked against its original passage and narrowed to an exact page range.
 
 For a fresh checkout, import the available original PDF and create a new collection before starting the server.
 

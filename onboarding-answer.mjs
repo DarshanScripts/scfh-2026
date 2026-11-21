@@ -26,7 +26,7 @@ async function fetchResult(base, kind, route, query, turnId, requestId, signal) 
   const response = await fetch(new URL(route, base), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId, requestId }),
-    signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(45_000)]),
   });
   if (!response.ok) throw new Error('The onboarding service could not complete the request.');
   const result = await response.json();

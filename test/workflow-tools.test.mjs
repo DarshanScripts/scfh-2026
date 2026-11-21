@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { RoomEvent } from '@livekit/rtc-node';
 import test from 'node:test';
 import { createRequire } from 'node:module';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -36,6 +37,39 @@ function fakeSession() {
     },
   };
 }
+
+test('sidebar RPC reveals each workflow step with playback and accepts close only from its operator', async () => {
+  const room = new EventEmitter();
+  room.remoteParticipants = new Map([['operator-test', { identity: 'operator-test' }]]);
+  const messages = [];
+  room.localParticipant = { async performRpc({ payload, destinationIdentity }) {
+    assert.equal(destinationIdentity, 'operator-test');
+    messages.push(JSON.parse(payload));
+    return 'ok';
+  } };
+  const session = fakeSession();
+  const tools = createWorkflowTools({ room });
+  try {
+    await tools.tools.find(tool => tool.name === 'draw_workflow').execute(workflow, {
+      ctx: { session, waitForPlayout: async () => {}, speechHandle: { interrupted: false } },
+      abortSignal: new AbortController().signal,
+    });
+    await until(() => messages.some(message => message.type === 'begin'));
+    for (let index = 0; index < workflow.steps.length; index++) {
+      await until(() => session.calls[index]);
+      assert.equal(messages.filter(message => message.type === 'step').length, index);
+      session.calls[index].start();
+      await until(() => messages.filter(message => message.type === 'step').length === index + 1);
+      session.calls[index].finish();
+    }
+    await until(() => messages.some(message => message.type === 'completed'));
+    const id = messages[0].id;
+    room.emit(RoomEvent.DataReceived, new TextEncoder().encode(id), { identity: 'other' }, undefined, 'sketch.close.v1');
+    assert(!messages.some(message => message.type === 'dismiss'));
+    room.emit(RoomEvent.DataReceived, new TextEncoder().encode(id), { identity: 'operator-test' }, undefined, 'sketch.close.v1');
+    await until(() => messages.some(message => message.type === 'dismiss'));
+  } finally { tools.close(); }
+});
 
 async function until(condition) {
   const deadline = Date.now() + 20_000;

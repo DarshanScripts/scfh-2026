@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { RoomEvent } from '@livekit/rtc-node';
 import { createRequire } from 'node:module';
 import { setTimeout as delay } from 'node:timers/promises';
 import { llm } from '@livekit/agents';
@@ -7,7 +8,7 @@ import { getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { startRoughPreview, windowScript } from './preview-roughjs.mjs';
 import { playWorkflowStep } from './workflow-playback.mjs';
 import { diagramKinds, diagramLayouts, layoutScene } from './packages/onboarding/browser/scene-layout.mjs';
-import { lessonSchema } from './packages/rough-canvas/contract.mjs';
+import { CLOSE_TOPIC, DRAW_RPC, MAX_PAYLOAD, lessonSchema } from './packages/rough-canvas/contract.mjs';
 import { validateLesson } from './packages/rough-canvas/canvas.mjs';
 import { workflowToLesson } from './workflow-rough-scene.mjs';
 
@@ -54,8 +55,13 @@ function cameraFor(scene) {
   return { type: 'cameraUpdate', x: (right + 64 - width) / 2, y: -25, width, height: width * 3 / 4 };
 }
 
-export function createWorkflowTools({ getAvatarAudio = () => undefined, getWalkthrough } = {}) {
+export function createWorkflowTools({ room, getAvatarAudio = () => undefined, getWalkthrough } = {}) {
   let active;
+  const onData = (bytes, participant, _kind, topic) => {
+    if (topic === CLOSE_TOPIC && bytes.byteLength <= 80 && active?.destination === participant?.identity &&
+        new TextDecoder().decode(bytes) === active.id) close();
+  };
+  room?.on(RoomEvent.DataReceived, onData);
   function close() {
     const current = active;
     active = undefined;
@@ -76,23 +82,50 @@ export function createWorkflowTools({ getAvatarAudio = () => undefined, getWalkt
     void active.preview.send({ type: 'paused' }).catch(() => {});
   }
 
+  function sidebarPreview(run) {
+    const operators = [...room.remoteParticipants.values()].filter(({ identity }) => identity.startsWith('operator-'));
+    if (operators.length !== 1 || !room.localParticipant) throw new Error('The desktop sidebar is unavailable.');
+    run.destination = operators[0].identity;
+    let closed = false;
+    async function send(message, signal) {
+      signal?.throwIfAborted();
+      const payload = JSON.stringify({ ...message, id: run.id });
+      if (Buffer.byteLength(payload) > MAX_PAYLOAD) throw new Error('Canvas message is too large.');
+      const result = await room.localParticipant.performRpc({
+        method: DRAW_RPC, destinationIdentity: run.destination, payload, responseTimeout: 8000,
+      });
+      if (result !== 'ok') throw new Error('The sidebar rejected the canvas update.');
+    }
+    return {
+      isReady: () => !closed,
+      send,
+      close() {
+        if (closed) return;
+        closed = true;
+        void send({ type: 'dismiss' }).catch(() => {});
+      },
+    };
+  }
+
   async function narrate(run, lesson, session) {
     const { signal } = run.controller;
     try {
       if (signal.aborted) return;
       const fallbackSteps = run.playback ? lesson.steps.map(step => step.narration) : undefined;
-      const preview = await startRoughPreview({ id: run.id, fallbackSteps,
+      const preview = room ? sidebarPreview(run) : await startRoughPreview({ id: run.id, fallbackSteps,
         onClose: () => { if (active === run) close(); } });
       if (signal.aborted) {
         preview.close();
         return;
       }
       run.preview = preview;
-      const child = run.child = spawn(createRequire(import.meta.url)('electron'), [windowScript, preview.url], {
-        env: getDefaultEnvironment(), stdio: 'ignore',
-      });
-      child.on('error', (error) => { run.windowError = error; });
-      child.once('exit', () => { if (active === run) close(); });
+      if (!room) {
+        const child = run.child = spawn(createRequire(import.meta.url)('electron'), [windowScript, preview.url], {
+          env: getDefaultEnvironment(), stdio: 'ignore',
+        });
+        child.on('error', (error) => { run.windowError = error; });
+        child.once('exit', () => { if (active === run) close(); });
+      }
 
       const readyDeadline = Date.now() + 20_000;
       while (!preview.isReady()) {
@@ -222,5 +255,6 @@ export function createWorkflowTools({ getAvatarAudio = () => undefined, getWalkt
     execute: async (lesson, { ctx, abortSignal }) => start(lesson, ctx, abortSignal),
   });
   return { tools: [draw, llm.tool({ name: 'close_workflow_canvas', description: 'Close the voice-created workflow canvas when requested.',
-    execute: async () => { close(); return 'Workflow canvas closed.'; } }), sketch, ...(getWalkthrough ? [documented] : [])], close, interrupt };
+    execute: async () => { close(); return 'Workflow canvas closed.'; } }), sketch, ...(getWalkthrough ? [documented] : [])],
+    close() { close(); room?.off(RoomEvent.DataReceived, onData); }, interrupt };
 }

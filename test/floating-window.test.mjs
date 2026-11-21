@@ -48,31 +48,38 @@ async function withOrb(run, { sdk, callResponse } = {}) {
   }
 }
 
-test('the desktop orb stays on top and its single button cancels a pending call', async () => {
+test('the desktop sidebar stays on top, cancels calls and collapses', async () => {
   let timer;
   try {
     await withOrb(async ({ app, page, connect }) => {
-      const call = page.getByRole('button', { name: 'Call voice agent', exact: true });
+      const call = page.getByRole('button', { name: 'Start call', exact: true });
       const end = page.getByRole('button', { name: 'End call', exact: true });
       await call.waitFor({ timeout: 5_000 });
-      assert.equal(await page.getByRole('button').count(), 1);
-      assert.deepEqual(await app.evaluate(({ BrowserWindow }) => {
+      assert.equal(await call.count(), 1);
+      assert.deepEqual(await app.evaluate(({ BrowserWindow, screen }) => {
         const orb = BrowserWindow.getAllWindows()[0];
-        return [orb.isAlwaysOnTop(), ...orb.getContentSize()];
-      }), [true, 184, 184]);
+        const area = screen.getDisplayMatching(orb.getBounds()).workArea;
+        const bounds = orb.getBounds();
+        return [orb.isAlwaysOnTop(), bounds.width, bounds.height, Math.round(area.width * 0.3), area.height];
+      }).then(([top, width, height, expectedWidth, expectedHeight]) => [top, Math.abs(width - expectedWidth) <= 1, Math.abs(height - expectedHeight) <= 1]), [true, true, true]);
       if (process.env.SCFH_CAPTURE_ORB === '1') {
-        await page.screenshot({ path: 'docs/desktop-orb.png', omitBackground: true, scale: 'css' });
+        await page.screenshot({ path: 'docs/desktop-sidebar.png', scale: 'css' });
       }
       await call.click();
       await Promise.race([connect, new Promise((_, reject) => {
         timer = setTimeout(() => reject(new Error('Microphone capture did not reach the call endpoint.')), 5_000);
       })]).catch(async (error) => {
-        throw new Error(error.message + ' ' + await page.getByRole('status').innerText(), { cause: error });
+        throw new Error(error.message + ' ' + await page.locator('#status').innerText(), { cause: error });
       });
       await end.click();
       await call.waitFor({ timeout: 5_000 });
-      assert.equal(await page.getByRole('status').textContent(), 'Disconnected.');
+      assert.equal(await page.locator('#status').textContent(), 'Disconnected.');
       assert.equal(await end.count(), 0);
+      await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+      await page.getByRole('button', { name: 'Expand sidebar' }).waitFor();
+      assert(Math.abs((await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getBounds())).width - 42) <= 1);
+      await page.getByRole('button', { name: 'Expand sidebar' }).click();
+      await call.waitFor();
     });
   } finally {
     clearTimeout(timer);
@@ -123,7 +130,7 @@ const simulatedLiveKit = `
     Room: class {
       constructor() {
         this.events = new Map();
-        this.localParticipant = { publishTrack: async () => {} };
+        this.localParticipant = { publishTrack: async () => {}, publishData: async () => {} };
         this.remoteParticipants = new Map([
           ['caller', participant('caller', {}, ['audio', 'video'], 0)],
           ['agent', participant('agent', { 'lk.agent.state': 'listening' }, ['audio'])],
@@ -132,6 +139,8 @@ const simulatedLiveKit = `
         window.testRoom = this;
       }
       on(event, handler) { this.events.set(event, handler); }
+      registerTextStreamHandler() {}
+      registerRpcMethod(_method, handler) { this.rpc = handler; }
       async connect() {}
       async startAudio() {}
       async disconnect() { this.events.get('disconnected')?.(); }
@@ -154,10 +163,35 @@ const simulatedLiveKit = `
   };
 `;
 
+test('the assigned agent can show the canvas and restore the sidebar in the same window', async () => {
+  await withOrb(async ({ app, page }) => {
+    await page.getByRole('button', { name: 'Start call' }).click();
+    await page.locator('main[data-state="listening"]').waitFor();
+    const begin = { type: 'begin', id: 'test-canvas', title: 'Onboarding', total: 1 };
+    const send = (callerIdentity, message) => page.evaluate(({ callerIdentity, message }) =>
+      window.testRoom.rpc({ callerIdentity, payload: JSON.stringify(message) }), { callerIdentity, message });
+    assert.equal(await send('unrelated-participant', begin), 'invalid');
+    assert.equal(await send('agent', begin), 'ok');
+    await page.locator('body[data-mode="canvas"]').waitFor();
+    assert.equal(await send('agent', { type: 'step', id: begin.id, index: 0, narration: 'Check the source.', marks: [
+      { kind: 'rectangle', x: 100, y: 100, width: 160, height: 80, group: 'source' },
+      { kind: 'label', x: 180, y: 140, text: 'Source', group: 'source' },
+    ] }), 'ok');
+    assert.equal(await send('agent', { type: 'completed', id: begin.id }), 'ok');
+    await page.getByRole('button', { name: 'Save as PNG' }).waitFor();
+    await page.getByRole('button', { name: 'Close canvas' }).click();
+    await page.locator('body[data-mode="sidebar"]').waitFor();
+    assert.equal(app.windows().length, 1);
+    await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+    await page.getByRole('button', { name: 'Expand sidebar' }).click();
+    await page.getByRole('button', { name: 'End call' }).click();
+  }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: false } });
+});
+
 for (const avatarEnabled of [false, true]) {
   test(avatarEnabled ? 'the orb plays only the matching avatar media' : 'voice-only calls play only the agent audio', async () => {
     await withOrb(async ({ page }) => {
-      await page.getByRole('button', { name: 'Call voice agent', exact: true }).click();
+      await page.getByRole('button', { name: 'Start call', exact: true }).click();
       const video = page.locator('#avatar');
       if (avatarEnabled) {
         await page.waitForFunction(() => document.querySelector('#status').textContent === 'Waiting for the avatar…');
@@ -186,16 +220,16 @@ for (const avatarEnabled of [false, true]) {
 
 test('an unavailable avatar keeps the call open and plays the assigned agent audio', async () => {
   await withOrb(async ({ page }) => {
-    await page.getByRole('button', { name: 'Call voice agent' }).click();
+    await page.getByRole('button', { name: 'Start call' }).click();
     await page.getByText('Waiting for the avatar…').waitFor({ state: 'attached', timeout: 5_000 });
     await page.evaluate(() => {
       window.testRoom.fallBackToVoice();
       window.testRoom.publishAvatar();
     });
-    await page.getByText('Voice only', { exact: true }).waitFor({ timeout: 5_000 });
+    await page.locator('main[data-state="listening"]').waitFor({ timeout: 5_000 });
     assert.equal(await page.locator('#avatar').isHidden(), true);
     assert.deepEqual(await page.locator('audio').evaluateAll((nodes) => nodes.map((node) => node.dataset.owner)), ['agent']);
-    assert.equal(await page.getByRole('status').textContent(), 'Avatar unavailable. Listening. Say a command.');
+    assert.equal(await page.locator('#status').textContent(), 'Avatar unavailable. Listening. Say a command.');
     await page.getByRole('button', { name: 'End call' }).click();
   }, { sdk: simulatedLiveKit, callResponse: { url: 'test', token: 'test', avatarEnabled: true } });
 });

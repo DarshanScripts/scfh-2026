@@ -2,6 +2,8 @@
 
 This release follows [Challenge 2](../plan.md) using the fictional Facilities Service Desk. The Windows app uses reviewed fixtures and the Rough.js Workflow Canvas. The portable browser harness still exercises the Excalidraw renderer.
 
+`start.cmd` now opens the Electron sidebar. It includes live transcripts, inline PDF and Word citations, source fullscreen, collapse and expand, and a canvas in the same window. Closing the canvas restores the conversation. The integration passed 21 Node tests, 33 Python tests, and live avatar Q&A and seven-step walkthrough checks. The sidebar transport acknowledges drawing updates before continuing narration.
+
 | Plan area | Verification |
 | --- | --- |
 | Evidence and contracts | The Python suite verifies reviewed claims, provenance, conflict handling, evidence gaps, and the queue deadline. Every exported contract has a valid and invalid example. Schema drift and the PDF.js offsets passed. |

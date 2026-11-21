@@ -10,7 +10,7 @@ export function mountRoughPanel(root, { onClose = () => {} } = {}) {
   panel.innerHTML = `
     <header class="rough-lesson-header">
       <h2></h2>
-      <button type="button">Close canvas</button>
+      <button type="button" aria-label="Close canvas" title="Close canvas">×</button>
     </header>
     <div class="rough-lesson-paper">
       <svg viewBox="0 0 1000 600" role="img"><g></g></svg>
