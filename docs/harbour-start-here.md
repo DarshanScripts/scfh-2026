@@ -23,7 +23,7 @@ Member 1 owns the final merge into main after Windows acceptance.
 
 ## 2. Build, import, and run
 
-Use Node.js 22.22+, Python 3.12+, and uv. Get the original team file **00_haushaltsplan_2026_2027_gesamt.pdf** from Member 2 if missing. The reviewed copy has 938 pages and SHA-256 **78e8d0f836df424ba14ad710319bc977d4d2953855ae7960b588f9afb5efc0b3**. The PDF is transferred separately from Git.
+Use Node.js 22.22+, Python 3.12+, and uv. Get **00_haushaltsplan_2026_2027_gesamt.pdf** from Member 2 or download the **Haushaltsplan 2026 / 2027** from the city. The reviewed copy has 938 pages and SHA-256 **78e8d0f836df424ba14ad710319bc977d4d2953855ae7960b588f9afb5efc0b3**. The PDF stays outside Git. [City of Hildesheim budget downloads](https://www.stadt-hildesheim.de/portal/seiten/haushaltsplaene-jahresabschluesse-900003195-33610.html)
 
 ~~~powershell
 npm.cmd ci
