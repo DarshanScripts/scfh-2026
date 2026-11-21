@@ -373,8 +373,20 @@ class QdrantKnowledge(PublicSources):
         super().__init__(self.state.generation, self.corpus)
         self.router = self.router_type(self.settings)
         self.qdrant = connect(self.settings)
-        config = self.qdrant.get_collection(self.state.collection).config.params.vectors
+        try:
+            config = self.qdrant.get_collection(self.state.collection).config.params.vectors
+        except UnexpectedResponse as error:
+            self.close()
+            if error.status_code in (401, 403):
+                raise RagError(f"Qdrant denied access to the configured collection (HTTP {error.status_code}). Check QDRANT_URL and QDRANT_API_KEY.") from None
+            if error.status_code == 404:
+                raise RagError("The configured Qdrant project does not contain the selected collection.") from None
+            raise RagError(f"Qdrant could not load the configured collection (HTTP {error.status_code}).") from None
+        except ResponseHandlingException:
+            self.close()
+            raise RagError("Could not reach Qdrant. Check the connection and QDRANT_URL.") from None
         if not isinstance(config, models.VectorParams) or config.size != DIMENSIONS or config.distance != models.Distance.COSINE:
+            self.close()
             raise RagError("The collection has incompatible vector settings.")
         self.ordered = list(self.passages.values())
         self.bm25 = BM25Okapi([tokens(p.quote) for p in self.ordered])

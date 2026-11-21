@@ -25,9 +25,11 @@ const marker = 'voice action verified';
 const title = 'SCFH Voice Check';
 const language = process.env.AGENT_LANGUAGE || 'en';
 const walkthrough = process.argv.includes('--walkthrough');
+const harbourWalkthrough = walkthrough && process.env.ONBOARDING_KNOWLEDGE === 'harbour';
 const qa = process.argv.includes('--qa');
 const requireAvatar = process.argv.includes('--require-avatar');
-const text = walkthrough ? 'Walk me through a maintenance request from intake to handoff.'
+const text = harbourWalkthrough ? 'Walk me through the funding stage of the Hildesheim harbour project.'
+  : walkthrough ? 'Walk me through a maintenance request from intake to handoff.'
   : qa ? 'A maintenance ticket has no owner. When do I follow up, and who do I tell?'
     : language === 'de' ? 'Klicke im Fenster SCFH Voice Check auf die Schaltfläche.'
       : 'In the SCFH Voice Check window, click the button labeled Confirm desktop check.';
@@ -159,15 +161,23 @@ try {
   }
   await sendFixture();
   await waitFor(() => incomingTranscript.trim(), 'transcription of the spoken command', 15_000);
-  assert.match(incomingTranscript, walkthrough || qa ? /maintenance/i : /voice\s*check/i);
+  assert.match(incomingTranscript, harbourWalkthrough ? /funding/i : walkthrough || qa ? /maintenance/i : /voice\s*check/i);
   console.log('PASS LiveKit transcribed the spoken command: ' + incomingTranscript.trim());
 
   if (walkthrough) {
-    await waitFor(() => /confirm the timing with the desk lead/i.test(replyTranscript), 'all seven narrated Rough.js steps', 90_000);
-    assert.match(replyTranscript, /callback channel/i);
-    assert.match(replyTranscript, /maintenance queue/i);
-    await waitFor(() => canvasComplete, 'the acknowledged sidebar canvas', 10_000);
-    assert.equal(canvasStep, 7);
+    await waitFor(() => canvasComplete, 'the narrated and acknowledged sidebar canvas', 90_000);
+    if (harbourWalkthrough) {
+      await waitFor(() => /search for grants/i.test(replyTranscript), 'the final Harbour funding step', 15_000);
+      assert.equal(canvasStep, 4);
+      assert.match(replyTranscript, /own contribution/i);
+      assert(citedAnswer?.citations.some(source => source.locator.page === 752));
+      assert(citedAnswer?.citations.some(source => source.locator.page === 753));
+    } else {
+      await waitFor(() => /confirm the timing with the desk lead/i.test(replyTranscript), 'the final maintenance step', 15_000);
+      assert.equal(canvasStep, 7);
+      assert.match(replyTranscript, /callback channel/i);
+      assert.match(replyTranscript, /maintenance queue/i);
+    }
     console.log('PASS The Rough.js walkthrough narrated the approved steps through the final note.');
   } else if (qa) {
     await waitFor(() => citedAnswer && /desk lead/i.test(replyTranscript), 'the cited and spoken answer', 45_000);
