@@ -55,4 +55,4 @@ Start the app before the voice tests. Add `--require-avatar` to require live vid
 
 ## Hildesheim Harbour demo
 
-Use the separate Harbour corpus to explore the city's budget and council evidence for harbour expansion and renovation. See the [three-prompt jury run and Windows setup](docs/hildesheim-harbour-demo.md) and [corpus notes](packages/onboarding/harbour-corpus/README.md).
+Use the separate Harbour corpus to explore the city's budget and council evidence for harbour expansion and renovation. Member 1’s agent should start with the [Windows integration handoff](docs/harbour-start-here.md). See the [three-prompt jury run and Windows setup](docs/hildesheim-harbour-demo.md) and [corpus notes](packages/onboarding/harbour-corpus/README.md).
