@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
+import { createServer as createPortProbe } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { AccessToken, RoomAgentDispatch, RoomConfiguration, RoomServiceClient } from 'livekit-server-sdk';
 import { anthropicSettings } from './anthropic.mjs';
@@ -38,9 +39,14 @@ try {
 const onboarding = await startOnboardingService().catch((error) => {
   console.warn('Onboarding unavailable. See the onboarding setup in README.md.', error.message);
 });
+const healthProbe = createPortProbe();
+await new Promise((resolve, reject) => healthProbe.once('error', reject).listen(0, host, resolve));
+const healthPort = healthProbe.address().port;
+await new Promise((resolve, reject) => healthProbe.close(error => error ? reject(error) : resolve()));
 const workerEnv = {
   ...process.env,
   LIVEKIT_AGENT_NAME: agentName,
+  SCFH_WORKER_HEALTH_PORT: String(healthPort),
   ONBOARDING_SERVICE_URL: onboarding?.url || '',
 };
 const [html, script, sdk, answers] = await Promise.all([

@@ -5,19 +5,33 @@ import { llm } from '@livekit/agents';
 const require = createRequire(new URL('./packages/onboarding/package.json', import.meta.url));
 const encoder = new TextEncoder();
 const topic = 'scfh.onboarding.v1';
-let validate;
+const validators = new Map();
 
-async function answerValidator(base) {
-  if (!validate) {
-    const response = await fetch(new URL('/schema/answer', base), { signal: AbortSignal.timeout(3000) });
-    if (!response.ok) throw new Error('Could not load the answer schema.');
+async function validateResult(base, kind) {
+  if (!validators.has(kind)) {
+    const response = await fetch(new URL('/schema/' + kind, base), { signal: AbortSignal.timeout(3000) });
+    if (!response.ok) throw new Error('Could not load the onboarding schema.');
     const Ajv = require('ajv');
     const ajv = new Ajv({ allowUnionTypes: true });
     require('ajv-formats')(ajv);
     ajv.addKeyword('discriminator');
-    validate = ajv.compile(await response.json());
+    validators.set(kind, ajv.compile(await response.json()));
   }
-  return validate;
+  return validators.get(kind);
+}
+
+async function fetchResult(base, kind, route, query, turnId, requestId, signal) {
+  if (!base) throw new Error('The onboarding service is unavailable.');
+  const validate = await validateResult(base, kind);
+  const response = await fetch(new URL(route, base), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId, requestId }),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
+  });
+  if (!response.ok) throw new Error('The onboarding service could not complete the request.');
+  const result = await response.json();
+  if (!validate(result) || result.turnId !== turnId || result.requestId !== requestId) throw new Error('Invalid onboarding response.');
+  return result;
 }
 
 export function createOnboardingAnswers(room, base) {
@@ -49,16 +63,7 @@ export function createOnboardingAnswers(room, base) {
       if (!id || !current()) return;
       let text;
       try {
-        if (!base) throw new Error('The onboarding service is unavailable.');
-        const isAnswer = await answerValidator(base);
-        const response = await fetch(new URL('/api/question', base), {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ schemaVersion: 1, query: query.trim(), turnId: id, requestId }),
-          signal: AbortSignal.any([abortSignal, AbortSignal.timeout(8000)]),
-        });
-        if (!response.ok) throw new Error('The onboarding service could not answer.');
-        const answer = await response.json();
-        if (!isAnswer(answer) || answer.turnId !== id || answer.requestId !== requestId) throw new Error('Invalid answer.');
+        const answer = await fetchResult(base, 'answer', '/api/question', query, id, requestId, abortSignal);
         if (!current()) return;
         await publish({ type: 'answer', turnId: id, requestId, answer });
         text = answer.text;
@@ -71,5 +76,11 @@ export function createOnboardingAnswers(room, base) {
       // Undefined suppresses the automatic model reply after this speech.
     },
   });
-  return { beginTurn, tool };
+  async function getWalkthrough(query, signal) {
+    const id = turnId;
+    if (!id || signal.aborted) return;
+    const result = await fetchResult(base, 'walkthrough', '/api/walkthrough', query, id, randomUUID(), signal);
+    if (turnId === id && !signal.aborted) return result;
+  }
+  return { beginTurn, tool, getWalkthrough };
 }

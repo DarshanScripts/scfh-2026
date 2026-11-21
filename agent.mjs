@@ -31,7 +31,7 @@ export default defineAgent({
     const desktopGuard = createDesktopActionGuard();
     const onboarding = createOnboardingAnswers(ctx.room, process.env.ONBOARDING_SERVICE_URL);
     let avatarAudio;
-    const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal });
+    const workflows = createWorkflowTools({ getAvatarAudio: () => avatarAudio?.signal, getWalkthrough: onboarding.getWalkthrough });
     ctx.addShutdownCallback(() => workflows.close());
     const session = new voice.AgentSession({
       maxToolSteps: 24,
@@ -107,4 +107,5 @@ export default defineAgent({
 cli.runApp(new ServerOptions({
   agent: fileURLToPath(import.meta.url),
   agentName: workerName,
+  ...(process.env.SCFH_WORKER_HEALTH_PORT && { host: '127.0.0.1', port: Number(process.env.SCFH_WORKER_HEALTH_PORT) }),
 }));

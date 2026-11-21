@@ -3,15 +3,30 @@
 <meta charset="utf-8">
 <title>Workflow Canvas</title>
 <style>
-  body { margin: 0; background: #faf9f6; color: #212529; font: 15px system-ui, sans-serif; }
-  header { display: flex; align-items: center; gap: 14px; padding: 14px; }
-  button { padding: 6px 12px; }
-  iframe { width: 100%; height: calc(100vh - 60px); display: block; border: 0; background: #fff; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #f4f7fa; color: #233c50; font: 15px system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: #e9f1f7; font-weight: 600; }
+  button { padding: 6px 12px; border: 1px solid #9eb2c3; border-radius: 5px; background: white; color: inherit; font: inherit; }
+  button:disabled { opacity: .55; }
+  #description { margin: 0; padding: 12px 20px; background: #f7fafc; border-bottom: 1px solid #d7e0e8; }
+  #description:empty { display: none; }
+  #details { max-height: 35vh; overflow: auto; padding: 10px 20px; border-bottom: 1px solid #d7e0e8; }
+  #details li { padding-block: 4px; }
+  iframe { width: 100%; flex: 1; display: block; border: 0; background: #fff; }
+  iframe[hidden] { display: none; }
+  #fallback { margin: 0 24px 24px; }
+  #fallback li { padding-block: 6px; }
 </style>
 <header>
   <button id="advance" disabled>Reveal next step</button>
+  <button id="save" disabled hidden>Save as PNG</button>
   <span id="status" role="status">Loading canvas…</span>
 </header>
+<p id="description"></p>
+<details id="details" hidden>
+  <summary>Step details</summary>
+  <ol></ol>
+</details>
 <iframe title="Workflow diagram" sandbox="allow-scripts"></iframe>
+<ol id="fallback" aria-label="Documented workflow steps" hidden></ol>
 <script src="/canvas.js" defer></script>
 </html>

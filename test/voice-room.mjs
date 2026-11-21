@@ -20,9 +20,12 @@ const resultPath = resolve(scratch, 'clicked.txt');
 const marker = 'voice action verified';
 const title = 'SCFH Voice Check';
 const language = process.env.AGENT_LANGUAGE || 'en';
-const text = language === 'de'
-  ? 'Klicke im Fenster SCFH Voice Check auf die Schaltfläche.'
-  : 'Click the button in the SCFH Voice Check window.';
+const walkthrough = process.argv.includes('--walkthrough');
+const qa = process.argv.includes('--qa');
+const text = walkthrough ? 'Walk me through a maintenance request from intake to handoff.'
+  : qa ? 'A maintenance ticket has no owner. When do I follow up, and who do I tell?'
+    : language === 'de' ? 'Klicke im Fenster SCFH Voice Check auf die Schaltfläche.'
+      : 'In the SCFH Voice Check window, click the button labeled Confirm desktop check.';
 const rate = 24000;
 const fixtureTTS = new inference.TTS({
   model: 'cartesia/' + (process.env.CARTESIA_TTS_MODEL?.trim() || 'sonic-3.6'),
@@ -34,6 +37,9 @@ const room = new Room();
 const source = new AudioSource(rate, 1);
 let form;
 let outgoingAudio = false;
+let avatarEnabled = false;
+let avatarVideo = false;
+let citedAnswer;
 let incomingTranscript = '';
 let replyTranscript = '';
 
@@ -46,7 +52,14 @@ room.registerTextStreamHandler('lk.transcription', async (reader, from) => {
   }
 });
 room.registerByteStreamHandler('lk.agent.session', (reader) => { void reader.readAll().catch(() => {}); });
-room.on(RoomEvent.TrackSubscribed, async (track) => {
+room.registerTextStreamHandler('scfh.onboarding.v1', async (reader) => {
+  const event = JSON.parse(await reader.readAll());
+  if (event.type === 'answer') citedAnswer = event.answer;
+});
+room.on(RoomEvent.TrackSubscribed, async (track, _publication, participant) => {
+  const avatarTrack = Boolean(participant.attributes['lk.publish_on_behalf']);
+  if (avatarEnabled !== avatarTrack) return;
+  if (avatarTrack && track.kind === TrackKind.KIND_VIDEO) avatarVideo = true;
   if (track.kind !== TrackKind.KIND_AUDIO) return;
   try {
     for await (const frame of new AudioStream(track)) {
@@ -82,44 +95,73 @@ try {
   const raw = Buffer.concat(frames);
   const pcm = new Int16Array(raw.buffer, raw.byteOffset, raw.byteLength / 2);
   assert(pcm.length > rate, 'Fixture speech response did not contain enough samples.');
-  form = spawn('powershell.exe', [
-    '-NoProfile', '-STA', '-File', resolve('test/desktop-form.ps1'),
-    '-Title', title, '-ResultFile', resultPath, '-InitialText', marker,
-  ], { stdio: 'ignore' });
-  await new Promise((resolve, reject) => {
-    form.once('spawn', resolve);
-    form.once('error', reject);
-  });
+  if (!walkthrough && !qa) {
+    form = spawn('powershell.exe', [
+      '-NoProfile', '-STA', '-File', resolve('test/desktop-form.ps1'),
+      '-Title', title, '-ResultFile', resultPath, '-InitialText', marker,
+    ], { stdio: 'ignore' });
+    await new Promise((resolve, reject) => {
+      form.once('spawn', resolve);
+      form.once('error', reject);
+    });
+  }
 
   const ticket = await fetch(base + '/connect', { method: 'POST', headers: { origin: base } });
   assert(ticket.ok, 'Run start.cmd before running the voice smoke test.');
-  const { url, token } = await ticket.json();
+  const { url, token, avatarEnabled: withAvatar } = await ticket.json();
+  avatarEnabled = withAvatar === true;
   await room.connect(url, token);
   const track = LocalAudioTrack.createAudioTrack('test-microphone', source);
   await room.localParticipant.publishTrack(track, { source: TrackSource.SOURCE_MICROPHONE });
   await waitFor(() => [...room.remoteParticipants.values()].some((p) => p.attributes['lk.agent.state'] === 'listening'),
-    'the LiveKit agent to start listening', 20_000);
+    'the LiveKit agent to start listening', avatarEnabled ? 50_000 : 25_000);
   console.log('PASS The menu created a LiveKit room, routed the worker, and accepted a microphone track.');
+
+  // Let the Windows input gate settle before requesting real desktop input.
+  if (!walkthrough && !qa) await delay(11_500);
 
   const size = rate / 50;
   // Start and end with silence so the agent's VAD sees a complete speech turn.
   const input = new Int16Array(rate / 2 + pcm.length + rate * 2);
   input.set(pcm, rate / 2);
-  for (let start = 0; start < input.length; start += size) {
-    const frame = new Int16Array(size);
-    frame.set(input.subarray(start, start + size));
-    await source.captureFrame(new AudioFrame(frame, rate, 1, size));
-    await delay(20);
+  async function sendFixture() {
+    for (let start = 0; start < input.length; start += size) {
+      const frame = new Int16Array(size);
+      frame.set(input.subarray(start, start + size));
+      await source.captureFrame(new AudioFrame(frame, rate, 1, size));
+      await delay(20);
+    }
   }
+  await sendFixture();
   await waitFor(() => incomingTranscript.trim(), 'transcription of the spoken command', 15_000);
-  assert.match(incomingTranscript, /voice\s*check/i);
+  assert.match(incomingTranscript, walkthrough || qa ? /maintenance/i : /voice\s*check/i);
   console.log('PASS LiveKit transcribed the spoken command: ' + incomingTranscript.trim());
 
-  await waitFor(() => existsSync(resultPath), 'the native button click', 35_000);
-  assert.equal(await readFile(resultPath, 'utf8'), marker);
-  console.log('PASS The agent clicked the requested native Windows button and its callback ran.');
+  if (walkthrough) {
+    await waitFor(() => /confirm the timing with the desk lead/i.test(replyTranscript), 'all seven narrated Rough.js steps', 90_000);
+    assert.match(replyTranscript, /callback channel/i);
+    assert.match(replyTranscript, /maintenance queue/i);
+    console.log('PASS The Rough.js walkthrough narrated the approved steps through the final note.');
+  } else if (qa) {
+    await waitFor(() => citedAnswer && /desk lead/i.test(replyTranscript), 'the cited and spoken answer', 45_000);
+    assert(citedAnswer.citations.some(({ passageId }) => passageId === 'unassigned-reminder'));
+    console.log('PASS The approved spoken answer included the Word citation.');
+  } else {
+    const controlHeld = () => /\b(control|in use|busy|mouse|keyboard)\b/i.test(replyTranscript);
+    await waitFor(() => existsSync(resultPath) || controlHeld(), 'the native button click or a control handoff', 35_000);
+    if (!existsSync(resultPath) && controlHeld()) {
+      // Retry only the temporary fixture button, in a new turn after the user gate settles.
+      console.log('Windows-MCP reported a control handoff. Waiting before retrying the fixture.');
+      await delay(13_000);
+      if (!existsSync(resultPath)) await sendFixture();
+      await waitFor(() => existsSync(resultPath), 'the native button click after the control handoff', 35_000);
+    }
+    assert.equal(await readFile(resultPath, 'utf8'), marker);
+    console.log('PASS The agent clicked the requested native Windows button and its callback ran.');
+  }
   await waitFor(() => outgoingAudio && replyTranscript.trim(), 'spoken confirmation audio', 45_000);
-  console.log('PASS The agent returned audible speech through the LiveKit room: ' + replyTranscript.trim());
+  if (avatarEnabled) await waitFor(() => avatarVideo, 'Beyond Presence video', 10_000);
+  console.log('PASS The agent returned audible speech' + (avatarEnabled ? ' and Beyond Presence video.' : '.'));
 } finally {
   await room.disconnect().catch(() => {});
   await source.close();

@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from .contracts import Answer, CitationRequest, CitationUnavailable, Query, Request, StrictModel, Walkthrough
 from .knowledge import FixtureKnowledge
 from .rag import QdrantKnowledge, RagError
+from .schema import SCHEMAS
 
 PDFJS_VERSION = "5.6.205"
 PDFJS_FILES = {
@@ -85,9 +86,10 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/health":
             self.send_payload(200, b"{}", "application/json")
             return
-        if url.path == "/schema/answer":
+        if url.path in {"/schema/answer", "/schema/walkthrough"}:
             import json
-            self.send_payload(200, json.dumps(Answer.model_json_schema()).encode("utf-8"), "application/json")
+            schema = SCHEMAS[url.path.removeprefix("/schema/")]
+            self.send_payload(200, json.dumps(schema).encode("utf-8"), "application/json")
             return
         path = self.harness.assets.get(url.path)
         if url.path.startswith("/sources/"):

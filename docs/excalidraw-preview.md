@@ -21,6 +21,6 @@ Run `npm run preview:excalidraw` to open the **Workflow Canvas** desktop window.
 
 `npm run test:excalidraw-window` verifies both manual reveals in the Electron window.
 
-To try the narrated walkthrough, run `restart.cmd`, start a voice session, and say “Walk me through an example maintenance request in Excalidraw. Show the intake, details check, and assignment as you explain each step.” The separate canvas should open, show each step when its narration starts, and keep earlier steps visible. Interrupt with another voice request to stop the walkthrough, or close the canvas to stop the narration.
+The Windows voice walkthrough now uses the local Rough.js canvas. Run `restart.cmd` and say “Walk me through a maintenance request from intake to handoff” to test the live walkthrough. This Excalidraw page remains a standalone rendering check.
 
-`node --test test/workflow-tools.test.mjs` checks staged rendering in Electron, playback sequencing, and interruption with simulated audio events. The voice worker uses its audio output cue for direct speech and listens for audio returning from the Beyond Presence participant in avatar mode.
+`node --test test/rough-canvas.test.mjs test/workflow-tools.test.mjs` checks the Windows canvas, playback sequencing, and interruption. The voice worker uses its audio output cue for direct speech and listens for audio returning from the Beyond Presence participant in avatar mode.

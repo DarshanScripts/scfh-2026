@@ -8,6 +8,9 @@ import { getDefaultEnvironment } from '@modelcontextprotocol/client/stdio';
 import { buildWorkflow, createWorkflowTools } from '../workflow-tools.mjs';
 import { startPreview, windowScript } from '../preview-excalidraw.mjs';
 import { playWorkflowStep } from '../workflow-playback.mjs';
+import { createOnboardingAnswers } from '../onboarding-answer.mjs';
+import { startOnboardingService } from '../onboarding-service.mjs';
+import { workflowToLesson } from '../workflow-rough-scene.mjs';
 
 const workflow = { title: 'Maintenance example', steps: ['Receive request', 'Details complete?', 'Ask for details', 'Assign ticket'],
   narration: ['First, receive the maintenance request.', 'Check whether the details are complete.', 'Ask for any missing information.', 'If the details are complete, assign the ticket.'],
@@ -44,6 +47,28 @@ async function until(condition) {
 
 test('rejects invalid connections before starting a canvas', () => {
   assert.throws(() => buildWorkflow({ ...workflow, connections: [{ from: 0, to: 99, label: '' }] }), /indices/);
+});
+
+test('a return arrow uses the gutter and swimlane steps use their assigned columns', () => {
+  const scene = buildWorkflow({ ...workflow, layout: 'swimlane', lanes: ['Service desk', 'Maintenance'],
+    stepLanes: [0, 0, 0, 1], connections: [...workflow.connections, { from: 2, to: 1, label: 'Details received' }] });
+  const cards = scene.filter(({ id }) => id?.startsWith('step-'));
+  assert.equal(cards[0].x, cards[1].x);
+  assert(cards[3].x > cards[0].x);
+  assert(scene.some(element => element.id === 'lane-1' && element.text === 'Maintenance'));
+  for (const arrow of scene.filter(element => element.type === 'arrow')) {
+    const points = arrow.points.map(([dx, dy]) => [arrow.x + dx, arrow.y + dy]);
+    for (let i = 1; i < points.length; i++) {
+      const [x1, y1] = points[i - 1];
+      const [x2, y2] = points[i];
+      assert(x1 === x2 || y1 === y2, 'Connectors travel horizontally or vertically');
+      for (const card of cards) {
+        const insideX = Math.max(x1, x2) > card.x && Math.min(x1, x2) < card.x + card.width;
+        const insideY = Math.max(y1, y2) > card.y && Math.min(y1, y2) < card.y + card.height;
+        assert(!(insideX && insideY), `${arrow.id} enters ${card.id}`);
+      }
+    }
+  }
 });
 
 test('native window reveals only the stage played by the avatar', async () => {
@@ -110,4 +135,45 @@ test('voice tool speaks each line only after prior playout and stops on interrup
     assert.equal(session.calls.length, 2);
     assert.match(await workflowTools.tools[1].execute({}, {}), /closed/);
   } finally { await workflowTools.close(); }
+});
+
+test('the documented tool speaks all seven approved steps in order', async () => {
+  const service = await startOnboardingService();
+  const onboarding = createOnboardingAnswers({ localParticipant: { sendText: async () => {} } }, service.url);
+  const tools = createWorkflowTools({ getWalkthrough: onboarding.getWalkthrough });
+  const session = fakeSession();
+  const query = 'Walk me through a maintenance request from intake to handoff.';
+  const signal = new AbortController().signal;
+  try {
+    await onboarding.beginTurn();
+    const workflow = await onboarding.getWalkthrough(query, signal);
+    assert.equal(workflow.outcome, 'ready');
+    assert.equal(workflow.steps.length, 7);
+    const { workflowScene } = await import('../packages/onboarding/dist/diagram.js');
+    const elements = workflowScene(workflow, workflow.steps.length);
+    const links = workflow.steps.flatMap(step => step.edges.map(edge => ({ from: step.stepId, to: edge.toStepId,
+      arrow: elements.find(element => element.id === `${step.stepId}-to-${edge.toStepId}`) })));
+    const lesson = workflowToLesson({ title: workflow.title, narration: workflow.steps.map(step => step.narration),
+      elements, nodes: workflow.steps.map(step => step.stepId), links });
+    for (const [i, step] of lesson.steps.entries()) {
+      const label = step.marks.filter(mark => mark.kind === 'label' && mark.group === `step-${i}`).map(mark => mark.text).join(' ');
+      assert.equal(label, workflow.steps[i].label);
+    }
+    const tool = tools.tools.find(({ name }) => name === 'get_onboarding_walkthrough');
+    await tool.execute({ query }, {
+      ctx: { session, speechHandle: { interrupted: false }, waitForPlayout: async () => {} }, abortSignal: signal,
+    });
+    for (const [index, step] of workflow.steps.entries()) {
+      await until(() => session.calls.length > index);
+      const call = session.calls[index];
+      assert.equal(call.text, step.narration);
+      call.start();
+      await delay(30);
+      assert.equal(session.calls.length, index + 1);
+      call.finish();
+    }
+  } finally {
+    tools.close();
+    service.close();
+  }
 });
