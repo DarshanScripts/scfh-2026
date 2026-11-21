@@ -323,7 +323,7 @@ class HarbourKnowledge(QdrantKnowledge):
             anchors = WALKTHROUGH_ANCHORS[stages.index(key)]
             passage_ids = [f"hildesheim-budget-2026-2027-{anchor}" for anchor in anchors]
             steps.append(Step(stepId=key, kind="action", label=title, narration=narration,
-                              passageIds=passage_ids, edges=[Edge(label="", toStepId=chosen[index+1])] if index+1 < len(chosen) else []))
+                              passageIds=passage_ids, edges=[Edge(label="Next stage", toStepId=chosen[index+1])] if index+1 < len(chosen) else []))
             citations.extend(self.passages[ref] for ref in passage_ids)
         return Walkthrough(**ids, workflowId=PROJECT_ID,
                            title=STAGES[stage][0] if stage else "Hildesheim Harbour Expansion and Renovation",

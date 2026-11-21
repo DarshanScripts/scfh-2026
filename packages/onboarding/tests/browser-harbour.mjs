@@ -9,6 +9,13 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage();
   await page.goto(url);
+  const overviewResponse = await page.request.post(url + '/api/walkthrough', {
+    data: { query: 'Walk me through the Hildesheim harbour project.' },
+  });
+  assert.equal(overviewResponse.status(), 200);
+  const overview = await overviewResponse.json();
+  assert.equal(overview.outcome, 'ready');
+  assert.equal(overview.steps.length, 6);
   await page.locator('#query').fill('Walk me through the funding stage of the Hildesheim harbour project.');
   await page.locator('#walkthrough-button').click();
   await page.waitForFunction(() => document.querySelector('#diagram').dataset.count === '4');
